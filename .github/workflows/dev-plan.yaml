@@ -35,14 +35,15 @@ jobs:
       - name: Terraform Format
         working-directory: terraform/env/dev
         run: terraform fmt -recursive
+        
+      - name: Terraform Init
+        working-directory: terraform/env/dev
+        run: terraform init 
 
       - name: Terraform Validate
         working-directory: terraform/env/dev
         run: terraform validate
 
-      - name: Terraform Init
-        working-directory: terraform/env/dev
-        run: terraform init 
 
       - name: Terraform Plan
         working-directory: terraform/env/dev
