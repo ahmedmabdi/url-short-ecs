@@ -48,8 +48,4 @@ jobs:
         working-directory: terraform/env/dev
         run: terraform plan -out=tfplan
 
-      - name: Upload Plan
-        uses: actions/upload-artifact@v3
-        with:
-          name: terraform-plan
-          path: terraform/env/dev/tfplan
+    

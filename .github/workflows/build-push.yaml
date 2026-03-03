@@ -72,12 +72,4 @@ jobs:
       - name: Push Docker image to ECR
         run: docker push $IMAGE_URI
 
-      # 8️⃣ Save artifact for downstream workflows
-      - name: Save image URI artifact
-        run: echo $IMAGE_URI > .github/workflows/image_uri.txt
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: docker-image-uri
-          path: .github/workflows/image_uri.txt
+    

@@ -50,9 +50,3 @@ jobs:
       - name: Terraform Plan
         working-directory: terraform/env/prod
         run: terraform plan -out=tfplan-prod
-
-      - name: Upload Plan Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: terraform-plan-prod
-          path: terraform/env/prod/tfplan-prod

@@ -54,10 +54,3 @@ jobs:
       - name: Terraform Plan
         working-directory: terraform/env/staging
         run: terraform plan -out=tfplan-staging
-
-      # 8️⃣ Upload plan artifact
-      - name: Upload Plan Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: terraform-plan-staging
-          path: terraform/env/staging/tfplan-staging
