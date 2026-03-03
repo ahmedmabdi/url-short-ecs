@@ -52,7 +52,7 @@ variable "container_port" {
 
 variable "project" {
   type    = string
-  default = "urlshortener"
+  default = "urlshortener "
 }
 
 variable "project_name" {
