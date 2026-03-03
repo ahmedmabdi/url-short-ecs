@@ -1,0 +1,58 @@
+name: Terraform Plan - Prod
+
+on:
+  pull_request:
+    branches:
+      - main  # or prod branch if you prefer
+    paths:
+      - 'terraform/env/prod/**'
+      - 'terraform/modules/**'
+
+jobs:
+  terraform-plan:
+    name: Terraform Plan - Prod
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write  # required for OIDC
+
+    environment: 
+      name: prod  # triggers approval gate if configured in GitHub Environments
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets['AWS_ROLE_PROD'] }}
+          aws-region: eu-west-2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.6.7
+
+      - name: Terraform Format
+        working-directory: terraform/env/prod
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Validate
+        working-directory: terraform/env/prod
+        run: terraform validate
+
+      - name: Terraform Init
+        working-directory: terraform/env/prod
+        run: terraform init -backend-config=backend.tf
+
+      - name: Terraform Plan
+        working-directory: terraform/env/prod
+        run: terraform plan -out=tfplan-prod
+
+      - name: Upload Plan Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: terraform-plan-prod
+          path: terraform/env/prod/tfplan-prod

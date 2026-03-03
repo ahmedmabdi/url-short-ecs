@@ -1,0 +1,63 @@
+name: Terraform Plan - Staging
+
+on:
+  pull_request:
+    branches:
+      - staging
+    paths:
+      - 'terraform/env/staging/**'
+      - 'terraform/modules/**'
+
+jobs:
+  terraform-plan:
+    name: Terraform Plan - Staging
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write  # required for OIDC
+
+    steps:
+      # 1️⃣ Checkout code
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      # 2️⃣ Configure AWS credentials via OIDC
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets['AWS_ROLE_STAGING'] }}
+          aws-region: eu-west-2
+
+      # 3️⃣ Setup Terraform CLI
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.6.7
+
+      # 4️⃣ Terraform formatting check
+      - name: Terraform Format
+        working-directory: terraform/env/staging
+        run: terraform fmt -check -recursive
+
+      # 5️⃣ Terraform validate
+      - name: Terraform Validate
+        working-directory: terraform/env/staging
+        run: terraform validate
+
+      # 6️⃣ Terraform init
+      - name: Terraform Init
+        working-directory: terraform/env/staging
+        run: terraform init -backend-config=backend.tf
+
+      # 7️⃣ Terraform plan
+      - name: Terraform Plan
+        working-directory: terraform/env/staging
+        run: terraform plan -out=tfplan-staging
+
+      # 8️⃣ Upload plan artifact
+      - name: Upload Plan Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: terraform-plan-staging
+          path: terraform/env/staging/tfplan-staging
