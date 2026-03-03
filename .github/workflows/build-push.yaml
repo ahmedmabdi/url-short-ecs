@@ -1,0 +1,83 @@
+name: Build, Scan & Push Docker Image
+
+on:
+  pull_request:
+    branches:
+      - dev
+      - staging
+      - main
+    paths:
+      - 'app/**'
+
+env:
+  AWS_REGION: eu-west-2
+  ECR_REPO: urlshort  # single repo for all environments
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write  # for OIDC login to AWS
+
+    steps:
+      # 1️⃣ Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2️⃣ Set environment based on branch
+      - name: Set Environment
+        id: env
+        run: |
+          if [[ "${GITHUB_REF##*/}" == "dev" ]]; then
+            echo "ENV=dev" >> $GITHUB_ENV
+          elif [[ "${GITHUB_REF##*/}" == "staging" ]]; then
+            echo "ENV=staging" >> $GITHUB_ENV
+          elif [[ "${GITHUB_REF##*/}" == "main" ]]; then
+            echo "ENV=prod" >> $GITHUB_ENV
+          fi
+          echo "Environment: $ENV"
+
+      # 3️⃣ Configure AWS credentials via OIDC
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # 4️⃣ Login to ECR
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
+      # 5️⃣ Build Docker image
+      - name: Build Docker image
+        run: |
+          IMAGE_TAG="${ENV}-${GITHUB_SHA}"
+          IMAGE_URI="${{ env.ECR_REPO }}:$IMAGE_TAG"
+          docker buildx build --platform linux/amd64 -t $IMAGE_URI -f app/Dockerfile app/
+          echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
+
+      # 6️⃣ Scan Docker image with Trivy
+      - name: Scan Docker image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: image
+          image-ref: ${{ env.IMAGE_URI }}
+          format: table
+          severity: CRITICAL
+          exit-code: 1
+          ignore-unfixed: true
+
+      # 7️⃣ Push Docker image to ECR
+      - name: Push Docker image to ECR
+        run: docker push $IMAGE_URI
+
+      # 8️⃣ Save artifact for downstream workflows
+      - name: Save image URI artifact
+        run: echo $IMAGE_URI > .github/workflows/image_uri.txt
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: docker-image-uri
+          path: .github/workflows/image_uri.txt
