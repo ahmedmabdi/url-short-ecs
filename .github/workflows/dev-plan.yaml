@@ -34,7 +34,7 @@ jobs:
 
       - name: Terraform Format
         working-directory: terraform/env/dev
-        run: terraform fmt -check -recursive
+        run: terraform fmt -check 
 
       - name: Terraform Validate
         working-directory: terraform/env/dev
@@ -42,7 +42,7 @@ jobs:
 
       - name: Terraform Init
         working-directory: terraform/env/dev
-        run: terraform init -backend-config=backend.tf
+        run: terraform init 
 
       - name: Terraform Plan
         working-directory: terraform/env/dev

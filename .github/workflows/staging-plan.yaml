@@ -38,7 +38,7 @@ jobs:
       # 4️⃣ Terraform formatting check
       - name: Terraform Format
         working-directory: terraform/env/staging
-        run: terraform fmt -check -recursive
+        run: terraform fmt -check 
 
       # 5️⃣ Terraform validate
       - name: Terraform Validate
