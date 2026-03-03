@@ -30,12 +30,12 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: 1.7.0
+          terraform_version: 1.14.0
 
       - name: Terraform Format
         working-directory: terraform/env/dev
         run: terraform fmt -recursive
-        
+
       - name: Terraform Init
         working-directory: terraform/env/dev
         run: terraform init 
