@@ -6,8 +6,7 @@ on:
       - dev
       - staging
       - main
-    paths:
-      - 'app/**'
+   # paths: - 'app/**'   <-- comment out for testing
 
 env:
   AWS_REGION: eu-west-2
