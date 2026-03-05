@@ -47,6 +47,6 @@ jobs:
 
       - name: Terraform Plan
         working-directory: terraform/env/dev
-        run: terraform plan -out=tfplan
+        run: terraform plan -var-file=env/dev/terraform.tfvars -out=tfplan
 
     
