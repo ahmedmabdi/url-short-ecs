@@ -27,21 +27,24 @@ jobs:
       - name: Set Environment
         id: env
         run: |
-          BRANCH="${GITHUB_REF##*/}"
+          BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF##*/}}"
+
           if [[ "$BRANCH" == "dev" ]]; then
             echo "ENV=dev" >> $GITHUB_ENV
             echo "AWS_ROLE=${{ secrets.AWS_ROLE_DEV }}" >> $GITHUB_ENV
             echo "ECR_REPO=${{ secrets.ECR_REPO_DEV }}" >> $GITHUB_ENV
+
           elif [[ "$BRANCH" == "staging" ]]; then
             echo "ENV=staging" >> $GITHUB_ENV
             echo "AWS_ROLE=${{ secrets.AWS_ROLE_STAGING }}" >> $GITHUB_ENV
             echo "ECR_REPO=${{ secrets.ECR_REPO_STAGING }}" >> $GITHUB_ENV
+
           elif [[ "$BRANCH" == "main" ]]; then
             echo "ENV=prod" >> $GITHUB_ENV
             echo "AWS_ROLE=${{ secrets.AWS_ROLE_PROD }}" >> $GITHUB_ENV
             echo "ECR_REPO=${{ secrets.ECR_REPO_PROD }}" >> $GITHUB_ENV
-          fi
-          echo "Environment: $ENV"
+
+          echo "Branch: $BRANCH"
 
       # 3️⃣ Configure AWS credentials via OIDC
       - name: Configure AWS credentials
@@ -67,7 +70,7 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: image
-          image-ref: ${{ env.IMAGE_URI }}
+          image-ref: $IMAGE_URI
           format: table
           severity: CRITICAL
           exit-code: 1
