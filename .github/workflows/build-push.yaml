@@ -6,8 +6,8 @@ on:
       - dev
       - staging
       - main
-      # paths: - 'app/**'  # optional, comment out to always run
-
+  paths: 
+      - 'app/**' 
 env:
   AWS_REGION: eu-west-2
 
