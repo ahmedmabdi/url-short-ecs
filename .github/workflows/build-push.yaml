@@ -25,26 +25,28 @@ jobs:
 
       # 2️⃣ Set environment based on branch
       - name: Set Environment
-        id: env
         run: |
           BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF##*/}}"
+          echo "Branch detected: $BRANCH"
 
-          if [[ "$BRANCH" == "dev" ]]; then
-            echo "ENV=dev" >> $GITHUB_ENV
-            echo "AWS_ROLE=${{ secrets.AWS_ROLE_DEV }}" >> $GITHUB_ENV
-            echo "ECR_REPO=${{ secrets.ECR_REPO_DEV }}" >> $GITHUB_ENV
+          if [ "$BRANCH" = "dev" ]; then
+          echo "ENV=dev" >> $GITHUB_ENV
+          echo "AWS_ROLE=${{ secrets.AWS_ROLE_DEV }}" >> $GITHUB_ENV
+          echo "ECR_REPO=${{ secrets.ECR_REPO_DEV }}" >> $GITHUB_ENV
 
-          elif [[ "$BRANCH" == "staging" ]]; then
-            echo "ENV=staging" >> $GITHUB_ENV
-            echo "AWS_ROLE=${{ secrets.AWS_ROLE_STAGING }}" >> $GITHUB_ENV
-            echo "ECR_REPO=${{ secrets.ECR_REPO_STAGING }}" >> $GITHUB_ENV
+          elif [ "$BRANCH" = "staging" ]; then
+          echo "ENV=staging" >> $GITHUB_ENV
+          echo "AWS_ROLE=${{ secrets.AWS_ROLE_STAGING }}" >> $GITHUB_ENV
+          echo "ECR_REPO=${{ secrets.ECR_REPO_STAGING }}" >> $GITHUB_ENV
 
-          elif [[ "$BRANCH" == "main" ]]; then
-            echo "ENV=prod" >> $GITHUB_ENV
-            echo "AWS_ROLE=${{ secrets.AWS_ROLE_PROD }}" >> $GITHUB_ENV
-            echo "ECR_REPO=${{ secrets.ECR_REPO_PROD }}" >> $GITHUB_ENV
-
-          echo "Branch: $BRANCH"
+          elif [ "$BRANCH" = "main" ]; then
+          echo "ENV=prod" >> $GITHUB_ENV
+          echo "AWS_ROLE=${{ secrets.AWS_ROLE_PROD }}" >> $GITHUB_ENV
+          echo "ECR_REPO=${{ secrets.ECR_REPO_PROD }}" >> $GITHUB_ENV
+          else
+          echo "Branch not configured for deployment"
+          exit 1
+          fi
 
       # 3️⃣ Configure AWS credentials via OIDC
       - name: Configure AWS credentials
