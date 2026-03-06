@@ -15,7 +15,7 @@ jobs:
 
     permissions:
       contents: read
-      id-token: write  # required for OIDC
+      id-token: write 
 
     steps:
       - name: Checkout

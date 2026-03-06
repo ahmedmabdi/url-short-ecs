@@ -15,7 +15,7 @@ jobs:
 
     permissions:
       contents: read
-      id-token: write  # required for OIDC
+      id-token: write  
 
 
     steps:
@@ -44,8 +44,6 @@ jobs:
       - name: Terraform Validate
         working-directory: terraform/env/prod
         run: terraform validate
-
-      
 
       - name: Terraform Plan
         working-directory: terraform/env/prod

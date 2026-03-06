@@ -15,7 +15,7 @@ jobs:
 
     permissions:
       contents: read
-      id-token: write  # required for OIDC
+      id-token: write  
 
     steps:
       - name: Checkout
@@ -35,7 +35,7 @@ jobs:
       - name: Terraform Format
         working-directory: terraform/env/dev
         run: terraform fmt -recursive
-        
+
       - name: Terraform Init
         working-directory: terraform/env/dev
         run: terraform init 
