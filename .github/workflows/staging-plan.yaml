@@ -39,17 +39,17 @@ jobs:
       - name: Terraform Format
         working-directory: terraform/env/staging
         run: terraform fmt -recursive
+        # 6️⃣ Terraform init
+      - name: Terraform Init
+        working-directory: terraform/env/staging
+        run: terraform init 
 
       # 5️⃣ Terraform validate
       - name: Terraform Validate
         working-directory: terraform/env/staging
         run: terraform validate
 
-      # 6️⃣ Terraform init
-      - name: Terraform Init
-        working-directory: terraform/env/staging
-        run: terraform init 
-
+  
       # 7️⃣ Terraform plan
       - name: Terraform Plan
         working-directory: terraform/env/staging
