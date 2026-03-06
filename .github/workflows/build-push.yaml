@@ -1,0 +1,76 @@
+name: Build, Scan & Push Docker Image
+
+on:
+  pull_request:
+    branches:
+      - dev
+      - staging
+      - main
+    paths: 
+      - 'app/**' 
+env:
+  AWS_REGION: eu-west-2
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write  
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set Environment
+        run: |
+          BRANCH="${GITHUB_BASE_REF:-${GITHUB_REF##*/}}"
+          echo "Branch detected: $BRANCH"
+
+          if [ "$BRANCH" = "dev" ]; then
+          echo "ENV=dev" >> $GITHUB_ENV
+          echo "AWS_ROLE=${{ secrets.AWS_ROLE_DEV }}" >> $GITHUB_ENV
+          echo "ECR_REPO=${{ secrets.ECR_REPO_DEV }}" >> $GITHUB_ENV
+
+          elif [ "$BRANCH" = "staging" ]; then
+          echo "ENV=staging" >> $GITHUB_ENV
+          echo "AWS_ROLE=${{ secrets.AWS_ROLE_STAGING }}" >> $GITHUB_ENV
+          echo "ECR_REPO=${{ secrets.ECR_REPO_STAGING }}" >> $GITHUB_ENV
+
+          elif [ "$BRANCH" = "main" ]; then
+          echo "ENV=prod" >> $GITHUB_ENV
+          echo "AWS_ROLE=${{ secrets.AWS_ROLE_PROD }}" >> $GITHUB_ENV
+          echo "ECR_REPO=${{ secrets.ECR_REPO_PROD }}" >> $GITHUB_ENV
+          else
+          echo "Branch not configured for deployment"
+          exit 1
+          fi
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ env.AWS_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build Docker image
+        run: |
+          IMAGE_TAG="${ENV}-${GITHUB_SHA}"
+          IMAGE_URI="${ECR_REPO}:$IMAGE_TAG"
+          docker buildx build --platform linux/amd64 -t $IMAGE_URI -f app/Dockerfile app/
+          echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
+
+      - name: Scan Docker image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: image
+          image-ref: ${{ env.IMAGE_URI }}
+          format: table
+          severity: CRITICAL
+          exit-code: 1
+          ignore-unfixed: true
+
+      - name: Push Docker image to ECR
+        run: docker push ${{ env.IMAGE_URI }}

@@ -1,0 +1,51 @@
+name: Terraform Plan - Dev
+
+on:
+  pull_request:
+    branches:
+      - dev
+    paths:
+      - 'terraform/env/dev/**'
+      - 'terraform/modules/**'
+
+jobs:
+  terraform-plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write  # required for OIDC
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets['AWS_ROLE_DEV'] }}
+          aws-region: eu-west-2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.14.0
+
+      - name: Terraform Format
+        working-directory: terraform/env/dev
+        run: terraform fmt -recursive
+        
+      - name: Terraform Init
+        working-directory: terraform/env/dev
+        run: terraform init 
+
+      - name: Terraform Validate
+        working-directory: terraform/env/dev
+        run: terraform validate
+
+      - name: Terraform Plan
+        working-directory: terraform/env/dev
+        run: terraform plan -var-file=terraform.tfvars -out=tfplan
+
+    
