@@ -3,7 +3,7 @@ name: Terraform Plan - Prod
 on:
   pull_request:
     branches:
-      - main  # or prod branch if you prefer
+      - main  
     paths:
       - 'terraform/env/prod/**'
       - 'terraform/modules/**'

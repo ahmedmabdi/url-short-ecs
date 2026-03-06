@@ -18,40 +18,32 @@ jobs:
       id-token: write  # required for OIDC
 
     steps:
-      # 1️⃣ Checkout code
       - name: Checkout
         uses: actions/checkout@v3
 
-      # 2️⃣ Configure AWS credentials via OIDC
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ secrets['AWS_ROLE_STAGING'] }}
           aws-region: eu-west-2
 
-      # 3️⃣ Setup Terraform CLI
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.14.0
 
-      # 4️⃣ Terraform formatting check
       - name: Terraform Format
         working-directory: terraform/env/staging
         run: terraform fmt -recursive
 
-        # 6️⃣ Terraform init
       - name: Terraform Init
         working-directory: terraform/env/staging
         run: terraform init 
 
-      # 5️⃣ Terraform validate
       - name: Terraform Validate
         working-directory: terraform/env/staging
         run: terraform validate
 
-
-      # 7️⃣ Terraform plan
       - name: Terraform Plan
         working-directory: terraform/env/staging
         run: terraform plan -out=tfplan-staging
