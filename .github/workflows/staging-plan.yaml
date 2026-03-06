@@ -48,7 +48,7 @@ jobs:
       # 6️⃣ Terraform init
       - name: Terraform Init
         working-directory: terraform/env/staging
-        run: terraform init -backend-config=backend.tf
+        run: terraform init 
 
       # 7️⃣ Terraform plan
       - name: Terraform Plan

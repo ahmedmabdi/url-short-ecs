@@ -42,7 +42,7 @@ jobs:
 
       - name: Terraform Init
         working-directory: terraform/env/dev
-        run: terraform init -backend-config=backend.tf
+        run: terraform init 
 
       - name: Terraform Plan
         working-directory: terraform/env/dev
