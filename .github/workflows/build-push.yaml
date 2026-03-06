@@ -16,14 +16,12 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write  # required for OIDC login to AWS
+      id-token: write  
 
     steps:
-      # 1️⃣ Checkout code
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2️⃣ Set environment based on branch
       - name: Set Environment
         run: |
           BRANCH="${GITHUB_BASE_REF:-${GITHUB_REF##*/}}"
@@ -48,18 +46,15 @@ jobs:
           exit 1
           fi
 
-      # 3️⃣ Configure AWS credentials via OIDC
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ env.AWS_ROLE }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # 4️⃣ Login to ECR
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v1
 
-      # 5️⃣ Build Docker image
       - name: Build Docker image
         run: |
           IMAGE_TAG="${ENV}-${GITHUB_SHA}"
@@ -67,7 +62,6 @@ jobs:
           docker buildx build --platform linux/amd64 -t $IMAGE_URI -f app/Dockerfile app/
           echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
 
-      # 6️⃣ Scan Docker image
       - name: Scan Docker image with Trivy
         uses: aquasecurity/trivy-action@master
         with:
@@ -78,6 +72,5 @@ jobs:
           exit-code: 1
           ignore-unfixed: true
 
-      # 7️⃣ Push Docker image
       - name: Push Docker image to ECR
         run: docker push ${{ env.IMAGE_URI }}
