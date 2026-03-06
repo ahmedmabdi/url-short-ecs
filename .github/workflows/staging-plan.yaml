@@ -33,12 +33,13 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: 1.7.0
+          terraform_version: 1.14.0
 
       # 4️⃣ Terraform formatting check
       - name: Terraform Format
         working-directory: terraform/env/staging
         run: terraform fmt -recursive
+
         # 6️⃣ Terraform init
       - name: Terraform Init
         working-directory: terraform/env/staging
@@ -49,7 +50,7 @@ jobs:
         working-directory: terraform/env/staging
         run: terraform validate
 
-  
+
       # 7️⃣ Terraform plan
       - name: Terraform Plan
         working-directory: terraform/env/staging
