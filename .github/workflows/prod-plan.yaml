@@ -17,8 +17,6 @@ jobs:
       contents: read
       id-token: write  # required for OIDC
 
-    environment: 
-      name: prod  # triggers approval gate if configured in GitHub Environments
 
     steps:
       - name: Checkout
@@ -38,7 +36,7 @@ jobs:
       - name: Terraform Format
         working-directory: terraform/env/prod
         run: terraform fmt -recursive
-        
+
       - name: Terraform Init
         working-directory: terraform/env/prod
         run: terraform init 
