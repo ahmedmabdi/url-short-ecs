@@ -1,7 +1,7 @@
 terraform {
   backend "s3" {
     bucket       = "urlshortecs"
-    key          = "prod/terraform.tfstate"  
+    key          = "staging/terraform.tfstate"  
     region       = "eu-west-2"
     encrypt      = true
     use_lockfile = true
