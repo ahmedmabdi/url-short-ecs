@@ -8,10 +8,6 @@ variable "acm_certificate_arn" {
   type        = string
 }
 
-variable "waf_arn" {
-  description = "WAFv2 Web ACL ARN to attach to CloudFront"
-  type        = string
-}
 variable "domain_name" {
   type    = string
   default = "ahmedumami.click"

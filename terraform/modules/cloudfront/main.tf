@@ -1,3 +1,8 @@
+provider "aws" {
+  alias  = "us_east_1"
+  region = "us-east-1"
+}
+
 resource "aws_wafv2_web_acl" "cf_waf" {
   provider = aws.us_east_1   
   name     = "url-shortener-cf-waf"
