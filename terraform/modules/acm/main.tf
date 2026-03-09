@@ -1,7 +1,4 @@
-# base - , ecr , endpoints security groups, iam for ecs, cloudwatch - 
-# add route53 , dynamodb , deploy and check base
-# add ons - then add waf , secrets manager, cloudfront, apigateway 
-# focus on secruity in this project 
+
 
 resource "aws_acm_certificate" "this" {
   domain_name               = var.domain_name
@@ -16,17 +13,7 @@ resource "aws_acm_certificate" "this" {
     Name = "${var.domain_name}-certificate"
   }
 } 
-resource "aws_route53_record" "app" {
-  zone_id = var.route53_zone_id
-  name    = "ahmedumami.click"
-  type    = "A"
 
-  alias {
-    name                   = var.alb_dns_name
-    zone_id                = var.alb_zone_id
-    evaluate_target_health = true
-  }
-}
 
 resource "aws_route53_record" "validation" {
   for_each = {

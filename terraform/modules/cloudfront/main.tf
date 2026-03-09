@@ -1,9 +1,3 @@
-provider "aws" {
-  alias  = "us_east_1"
-  region = "us-east-1"
-}
-
-
 resource "aws_wafv2_web_acl" "cf_waf" {
   provider = aws.us_east_1   
   name     = "url-shortener-cf-waf"
@@ -24,7 +18,7 @@ resource "aws_wafv2_web_acl" "cf_waf" {
     priority = 1
 
     override_action {
-      count {}
+      none {}
     }
 
     statement {
@@ -80,6 +74,7 @@ resource "aws_cloudfront_distribution" "cf" {
   enabled             = true
   is_ipv6_enabled     = true
   default_root_object = "index.html"
+  aliases = ["ahmedumami.click"]
 
   default_cache_behavior {
     allowed_methods  = ["GET", "HEAD", "OPTIONS"]
@@ -114,4 +109,15 @@ resource "aws_cloudfront_distribution" "cf" {
   }
 
   web_acl_id = aws_wafv2_web_acl.cf_waf.arn  
+}
+resource "aws_route53_record" "app" {
+  zone_id = var.route53_zone_id
+  name    = "ahmedumami.click"
+  type    = "A"
+
+  alias {
+    name                   = aws_cloudfront_distribution.cf.domain_name
+    zone_id                = aws_cloudfront_distribution.cf.hosted_zone_id
+    evaluate_target_health = false
+  }
 }
