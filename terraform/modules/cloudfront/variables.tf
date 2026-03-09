@@ -3,7 +3,7 @@ variable "alb_dns_name" {
   type        = string
 }
 
-variable "certificate_arn" {
+variable "acm_certificate_arn" {
   description = "ACM certificate ARN for CloudFront HTTPS"
   type        = string
 }
