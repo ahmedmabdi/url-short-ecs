@@ -3,15 +3,11 @@ variable "alb_dns_name" {
   type        = string
 }
 
-variable "certificate_arn" {
+variable "acm_certificate_arn" {
   description = "ACM certificate ARN for CloudFront HTTPS"
   type        = string
 }
 
-variable "waf_arn" {
-  description = "WAFv2 Web ACL ARN to attach to CloudFront"
-  type        = string
-}
 variable "domain_name" {
   type    = string
   default = "ahmedumami.click"
