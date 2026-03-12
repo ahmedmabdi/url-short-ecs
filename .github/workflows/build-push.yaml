@@ -71,18 +71,20 @@ jobs:
       - name: Build Docker image
         id: build-image
         run: |
-          IMAGE_TAG="${ENV}-${GITHUB_SHA}"
-          IMAGE_URI="${ECR_REPO}:$IMAGE_TAG"
+         echo "ENV=$ENV"
+         echo "ECR_REPO=$ECR_REPO"
+         IMAGE_TAG="${ENV}-${GITHUB_SHA}"
+         IMAGE_URI="${ECR_REPO}:$IMAGE_TAG"
 
-          docker buildx build \
-            --platform linux/amd64 \
-            -t $IMAGE_URI \
-            -f app/Dockerfile app/
+         if [ -z "$ECR_REPO" ]; then
+         echo "Error: ECR_REPO is not set!"
+         exit 1
+         fi
 
-          docker push $IMAGE_URI
+         docker buildx build --platform linux/amd64 -t $IMAGE_URI -f app/Dockerfile app/
+         docker push $IMAGE_URI
 
-          echo "image=$IMAGE_URI" >> $GITHUB_OUTPUT
-
+         echo "image=$IMAGE_URI" >> $GITHUB_OUTPUT
       - name: Scan Docker image with Trivy
         uses: aquasecurity/trivy-action@master
         with:
