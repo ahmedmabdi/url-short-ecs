@@ -3,7 +3,7 @@ name: Terraform Plan - staging
 on:
   pull_request:
     branches:
-      - dev
+      - staging
     paths:
       - 'terraform/env/staging/**'
       - 'terraform/modules/**'

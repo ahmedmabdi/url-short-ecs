@@ -1,9 +1,9 @@
-name: Terraform Plan - staging
+name: Terraform Plan - prod
 
 on:
   pull_request:
     branches:
-      - dev
+      - prod
     paths:
       - 'terraform/env/prod/**'
       - 'terraform/modules/**'
