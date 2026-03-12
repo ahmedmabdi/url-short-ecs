@@ -115,10 +115,3 @@ resource "aws_cloudwatch_log_group" "ecs" {
 
 }
 
-data "aws_secretsmanager_secret" "table_name" {
-  name = "DB_TABLE_NAME"
-}
-
-data "aws_secretsmanager_secret_version" "table_name" {
-  secret_id = data.aws_secretsmanager_secret.table_name.id
-}
