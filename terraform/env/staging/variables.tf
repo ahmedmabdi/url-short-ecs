@@ -12,6 +12,15 @@ variable "vpc_name" {
   type    = string
   default = "urlshort-staging-vpc"
 }
+variable "domain_name" {
+  type    = string
+  default = "ahmedumami.click"
+}
+
+variable "subject_alternative_names" {
+  type    = list(string)
+  default = ["www.ahmedumami.click"]
+}
 
 variable "azs" {
   type    = list(string)
