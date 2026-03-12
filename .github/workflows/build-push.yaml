@@ -1,4 +1,4 @@
-name: Build, Scan & Push Docker Image
+name: Build, Scan & Deploy Docker Image
 
 on:
   pull_request:
@@ -6,44 +6,60 @@ on:
       - dev
       - staging
       - main
-    paths: 
-      - 'app/**' 
+    paths:
+      - "app/**"
+
 env:
   AWS_REGION: eu-west-2
+  S3_BUCKET: codedeploy-artifacts-ecs
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
+
   build-and-push:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write  
+    outputs:
+      image: ${{ steps.build-image.outputs.image }}
+      env_name: ${{ steps.set-env.outputs.env_name }}
+      appspec: ${{ steps.set-env.outputs.appspec }}
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Set Environment
+      - name: Detect Environment
+        id: set-env
         run: |
-          BRANCH="${GITHUB_BASE_REF:-${GITHUB_REF##*/}}"
+          BRANCH="${GITHUB_BASE_REF}"
           echo "Branch detected: $BRANCH"
 
           if [ "$BRANCH" = "dev" ]; then
-          echo "ENV=dev" >> $GITHUB_ENV
-          echo "AWS_ROLE=${{ secrets.AWS_ROLE_DEV }}" >> $GITHUB_ENV
-          echo "ECR_REPO=${{ secrets.ECR_REPO_DEV }}" >> $GITHUB_ENV
+            echo "ENV=dev" >> $GITHUB_ENV
+            echo "AWS_ROLE=${{ secrets.AWS_ROLE_DEV }}" >> $GITHUB_ENV
+            echo "ECR_REPO=${{ secrets.ECR_REPO_DEV }}" >> $GITHUB_ENV
+            echo "env_name=dev" >> $GITHUB_OUTPUT
+            echo "appspec=codedeploy/appspec-dev.yml" >> $GITHUB_OUTPUT
 
           elif [ "$BRANCH" = "staging" ]; then
-          echo "ENV=staging" >> $GITHUB_ENV
-          echo "AWS_ROLE=${{ secrets.AWS_ROLE_STAGING }}" >> $GITHUB_ENV
-          echo "ECR_REPO=${{ secrets.ECR_REPO_STAGING }}" >> $GITHUB_ENV
+            echo "ENV=staging" >> $GITHUB_ENV
+            echo "AWS_ROLE=${{ secrets.AWS_ROLE_STAGING }}" >> $GITHUB_ENV
+            echo "ECR_REPO=${{ secrets.ECR_REPO_STAGING }}" >> $GITHUB_ENV
+            echo "env_name=staging" >> $GITHUB_OUTPUT
+            echo "appspec=codedeploy/appspec-staging.yml" >> $GITHUB_OUTPUT
 
           elif [ "$BRANCH" = "main" ]; then
-          echo "ENV=prod" >> $GITHUB_ENV
-          echo "AWS_ROLE=${{ secrets.AWS_ROLE_PROD }}" >> $GITHUB_ENV
-          echo "ECR_REPO=${{ secrets.ECR_REPO_PROD }}" >> $GITHUB_ENV
+            echo "ENV=prod" >> $GITHUB_ENV
+            echo "AWS_ROLE=${{ secrets.AWS_ROLE_PROD }}" >> $GITHUB_ENV
+            echo "ECR_REPO=${{ secrets.ECR_REPO_PROD }}" >> $GITHUB_ENV
+            echo "env_name=prod" >> $GITHUB_OUTPUT
+            echo "appspec=codedeploy/appspec-prod.yml" >> $GITHUB_OUTPUT
+
           else
-          echo "Branch not configured for deployment"
-          exit 1
+            echo "Branch not configured for deployment"
+            exit 1
           fi
 
       - name: Configure AWS credentials
@@ -56,21 +72,94 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v1
 
       - name: Build Docker image
+        id: build-image
         run: |
           IMAGE_TAG="${ENV}-${GITHUB_SHA}"
           IMAGE_URI="${ECR_REPO}:$IMAGE_TAG"
-          docker buildx build --platform linux/amd64 -t $IMAGE_URI -f app/Dockerfile app/
-          echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
+
+          docker buildx build \
+            --platform linux/amd64 \
+            -t $IMAGE_URI \
+            -f app/Dockerfile app/
+
+          docker push $IMAGE_URI
+
+          echo "image=$IMAGE_URI" >> $GITHUB_OUTPUT
 
       - name: Scan Docker image with Trivy
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: image
-          image-ref: ${{ env.IMAGE_URI }}
+          image-ref: ${{ steps.build-image.outputs.image }}
           format: table
           severity: CRITICAL
           exit-code: 1
           ignore-unfixed: true
 
-      - name: Push Docker image to ECR
-        run: docker push ${{ env.IMAGE_URI }}
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set environment variables
+        run: |
+          echo "ENV=${{ needs.build-and-push.outputs.env_name }}" >> $GITHUB_ENV
+          echo "APPSPEC_FILE=${{ needs.build-and-push.outputs.appspec }}" >> $GITHUB_ENV
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_DEV }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Register ECS task definition
+        run: |
+          cat <<EOF > task-def.json
+          {
+            "family": "url-short-${ENV}",
+            "networkMode": "awsvpc",
+            "requiresCompatibilities": ["FARGATE"],
+            "cpu": "256",
+            "memory": "512",
+            "executionRoleArn": "${{ secrets.ECS_EXECUTION_ROLE }}",
+            "containerDefinitions": [
+              {
+                "name": "urlshort",
+                "image": "${{ needs.build-and-push.outputs.image }}",
+                "essential": true,
+                "portMappings": [
+                  {
+                    "containerPort": 8080,
+                    "protocol": "tcp"
+                  }
+                ]
+              }
+            ]
+          }
+          EOF
+
+          TASK_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file://task-def.json \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+
+          echo "TASK_DEF_ARN=$TASK_ARN" >> $GITHUB_ENV
+
+      - name: Inject Task ARN into AppSpec
+        run: |
+          sed -i "s|<TASK_DEFINITION_ARN>|${TASK_DEF_ARN}|g" $APPSPEC_FILE
+
+      - name: Upload AppSpec to S3
+        run: |
+          aws s3 cp $APPSPEC_FILE s3://${{ env.S3_BUCKET }}/appspec-${ENV}.yml
+
+      - name: Trigger CodeDeploy Deployment
+        run: |
+          aws deploy create-deployment \
+            --application-name url-shortener-${ENV} \
+            --deployment-group-name blue-green-${ENV} \
+            --s3-location bucket=${{ env.S3_BUCKET }},key=appspec-${ENV}.yml,bundleType=yaml
