@@ -12,7 +12,7 @@ on:
 env:
   AWS_REGION: eu-west-2
   S3_BUCKET: codedeploy-artifacts-ecs
-  APPSPEC_FILE: codedeploy/appspec.yml  # single appspec for all envs
+  APPSPEC_FILE: codedeploy/appspec.yml
 
 permissions:
   id-token: write
@@ -71,20 +71,20 @@ jobs:
       - name: Build Docker image
         id: build-image
         run: |
-         echo "ENV=$ENV"
-         echo "ECR_REPO=$ECR_REPO"
-         IMAGE_TAG="${ENV}-${GITHUB_SHA}"
-         IMAGE_URI="${ECR_REPO}:$IMAGE_TAG"
+          IMAGE_TAG="${ENV}-${GITHUB_SHA}"
+          IMAGE_URI="${ECR_REPO}:$IMAGE_TAG"
 
-         if [ -z "$ECR_REPO" ]; then
-         echo "Error: ECR_REPO is not set!"
-         exit 1
-         fi
+          echo "Building image $IMAGE_URI"
 
-         docker buildx build --platform linux/amd64 -t $IMAGE_URI -f app/Dockerfile app/
-         docker push $IMAGE_URI
+          docker buildx build \
+            --platform linux/amd64 \
+            -t $IMAGE_URI \
+            -f app/Dockerfile app/
 
-         echo "image=$IMAGE_URI" >> $GITHUB_OUTPUT
+          docker push $IMAGE_URI
+
+          echo "image=$IMAGE_URI" >> $GITHUB_OUTPUT
+
       - name: Scan Docker image with Trivy
         uses: aquasecurity/trivy-action@master
         with:
@@ -95,33 +95,41 @@ jobs:
           exit-code: 1
           ignore-unfixed: true
 
+
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3 
-      - name: Set AWS Role for deploy
+        uses: actions/checkout@v3
+
+      - name: Set Environment
         run: |
-           if [ "${{ needs.build-and-push.outputs.env_name }}" = "dev" ]; then
-           echo "AWS_ROLE=${{ secrets.AWS_ROLE_DEV }}" >> $GITHUB_ENV
-           elif [ "${{ needs.build-and-push.outputs.env_name }}" = "staging" ]; then
-           echo "AWS_ROLE=${{ secrets.AWS_ROLE_STAGING }}" >> $GITHUB_ENV
-           else
-           echo "AWS_ROLE=${{ secrets.AWS_ROLE_PROD }}" >> $GITHUB_ENV
-           fi
+          ENV="${{ needs.build-and-push.outputs.env_name }}"
+          echo "ENV=$ENV" >> $GITHUB_ENV
+
+          if [ "$ENV" = "dev" ]; then
+            echo "AWS_ROLE=${{ secrets.AWS_ROLE_DEV }}" >> $GITHUB_ENV
+          elif [ "$ENV" = "staging" ]; then
+            echo "AWS_ROLE=${{ secrets.AWS_ROLE_STAGING }}" >> $GITHUB_ENV
+          else
+            echo "AWS_ROLE=${{ secrets.AWS_ROLE_PROD }}" >> $GITHUB_ENV
+          fi
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ env.AWS_ROLE }}
           aws-region: ${{ env.AWS_REGION }}
-         
+
       - name: Register ECS task definition
         run: |
-          cat <<EOF > task-def.json
+          IMAGE="${{ needs.build-and-push.outputs.image }}"
+
+          cat > task-def.json <<EOF
           {
-            "family": "url-short-${ENV}",
+            "family": "url-short-$ENV",
             "networkMode": "awsvpc",
             "requiresCompatibilities": ["FARGATE"],
             "cpu": "256",
@@ -130,7 +138,7 @@ jobs:
             "containerDefinitions": [
               {
                 "name": "urlshort",
-                "image": "${{ needs.build-and-push.outputs.image }}",
+                "image": "$IMAGE",
                 "essential": true,
                 "portMappings": [
                   {
@@ -143,14 +151,12 @@ jobs:
           }
           EOF
 
-           TASK_ARN=$(aws ecs register-task-definition \
+          TASK_ARN=$(aws ecs register-task-definition \
             --cli-input-json file://task-def.json \
             --query 'taskDefinition.taskDefinitionArn' \
             --output text)
 
           echo "TASK_DEF_ARN=$TASK_ARN" >> $GITHUB_ENV
-
-
 
       - name: Inject Task ARN into AppSpec
         run: |
