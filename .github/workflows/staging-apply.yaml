@@ -1,4 +1,4 @@
-name: Terraform Plan - staging
+name: Terraform Apply - staging
 
 on:
   pull_request:
