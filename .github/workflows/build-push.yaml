@@ -33,7 +33,9 @@ jobs:
       - name: Detect Environment
         id: set-env
         run: |
-          BRANCH="${GITHUB_BASE_REF:-${GITHUB_REF##*/}}"
+          # Get the branch name for PRs or pushes
+          BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF##*/}}"
+          echo "Branch detected: $BRANCH"
 
           if [ "$BRANCH" = "dev" ]; then
             echo "ENV=dev" >> $GITHUB_ENV
@@ -47,11 +49,15 @@ jobs:
             echo "REPO=${{ secrets.ECR_REPO_STAGING }}" >> $GITHUB_ENV
             echo "env_name=staging" >> $GITHUB_OUTPUT
 
-          else
+          elif [ "$BRANCH" = "main" ]; then
             echo "ENV=prod" >> $GITHUB_ENV
             echo "ROLE=${{ secrets.AWS_ROLE_PROD }}" >> $GITHUB_ENV
             echo "REPO=${{ secrets.ECR_REPO_PROD }}" >> $GITHUB_ENV
             echo "env_name=prod" >> $GITHUB_OUTPUT
+
+          else
+            echo "Branch '$BRANCH' is not configured. Exiting."
+            exit 1
           fi
 
       - name: Configure AWS
