@@ -65,6 +65,7 @@ module "ecs" {
 
   vpc_id  = module.vpc.vpc_id
   region  = var.aws_region
+  
 }
 
 # ALB Module
@@ -77,6 +78,7 @@ module "alb" {
   certificate_arn   = module.acm.alb_certificate_arn
   target_port       = 8080
 }
+
 
 # ACM Module
 module "acm" {
