@@ -1,6 +1,10 @@
 provider "aws" {
   region = var.aws_region
 }
+provider "aws" {
+  alias = "us_east_1"
+  region = "us-east-1"
+}
 
 # VPC Module
 module "vpc" {
@@ -71,24 +75,36 @@ module "alb" {
   vpc_id            = module.vpc.vpc_id
   public_subnet_ids = module.vpc.public_subnet_ids
   alb_sg_id         = module.sg.alb_sg_id
-  certificate_arn   = module.acm.certificate_arn
+  certificate_arn   = module.acm.alb_certificate_arn
   target_port       = 8080
 }
 
 # ACM Module
 module "acm" {
+
   source       = "../../modules/acm"
   zone_id      = var.route53_zone_id
   alb_dns_name = module.alb.alb_dns_name
   alb_zone_id  = module.alb.alb_zone_id
+  providers = {
+    aws.us_east_1 = aws.us_east_1
+  }
 }
 
 # CloudFront Module
 module "cloudfront" {
-  source          = "../../modules/cloudfront"
-  alb_dns_name    = module.alb.alb_dns_name
-  waf_arn         = module.cloudfront.cf_waf_arn
-  certificate_arn = module.acm.certificate_arn
+  source = "../../modules/cloudfront"
+
+  alb_dns_name              = module.alb.alb_dns_name
+  domain_name               = var.domain_name
+  subject_alternative_names = var.subject_alternative_names
+  route53_zone_id           = var.route53_zone_id
+  acm_certificate_arn = module.acm.cloudfront_certificate_arn
+
+   providers = {
+    aws.us_east_1 = aws.us_east_1
+
+}
 }
 
 # CloudWatch

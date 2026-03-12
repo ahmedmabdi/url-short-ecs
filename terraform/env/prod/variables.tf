@@ -13,6 +13,16 @@ variable "vpc_name" {
   default = "urlshort-prod-vpc"
 }
 
+variable "domain_name" {
+  type    = string
+  default = "ahmedumami.click"
+}
+
+variable "subject_alternative_names" {
+  type    = list(string)
+  default = ["www.ahmedumami.click"]
+}
+
 variable "azs" {
   type    = list(string)
   default = ["eu-west-2a", "eu-west-2b"]

@@ -1,9 +1,15 @@
-# base - , ecr , endpoints security groups, iam for ecs, cloudwatch - 
-# add route53 , dynamodb , deploy and check base
-# add ons - then add waf , secrets manager, cloudfront, apigateway 
-# focus on secruity in this project 
+
+terraform {
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+      configuration_aliases = [aws.us_east_1]
+    }
+  }
+}
 
 resource "aws_acm_certificate" "this" {
+  
   domain_name               = var.domain_name
   subject_alternative_names = var.subject_alternative_names
   validation_method         = "DNS"
@@ -16,19 +22,19 @@ resource "aws_acm_certificate" "this" {
     Name = "${var.domain_name}-certificate"
   }
 } 
-resource "aws_route53_record" "app" {
-  zone_id = var.route53_zone_id
-  name    = "ahmedumami.click"
-  type    = "A"
+resource "aws_acm_certificate" "cf_cert" {
+  provider                  = aws.us_east_1
+  domain_name               = var.domain_name
+  subject_alternative_names = var.subject_alternative_names
+  validation_method         = "DNS"
 
-  alias {
-    name                   = var.alb_dns_name
-    zone_id                = var.alb_zone_id
-    evaluate_target_health = true
+  lifecycle {
+    create_before_destroy = true
   }
 }
 
 resource "aws_route53_record" "validation" {
+  allow_overwrite = true
   for_each = {
     for dvo in aws_acm_certificate.this.domain_validation_options :
     dvo.domain_name => {
@@ -47,6 +53,13 @@ resource "aws_route53_record" "validation" {
 
 resource "aws_acm_certificate_validation" "this" {
   certificate_arn         = aws_acm_certificate.this.arn
+  validation_record_fqdns = [for record in aws_route53_record.validation : record.fqdn]
+
+  depends_on = [aws_route53_record.validation]
+}
+resource "aws_acm_certificate_validation" "cf_cert_validation" {
+  provider                = aws.us_east_1
+  certificate_arn         = aws_acm_certificate.cf_cert.arn
   validation_record_fqdns = [for record in aws_route53_record.validation : record.fqdn]
 
   depends_on = [aws_route53_record.validation]

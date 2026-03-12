@@ -1,46 +1,11 @@
-provider "aws" {
-  alias  = "us_east_1"
-  region = "us-east-1"
-}
-
-resource "aws_acm_certificate" "cf_cert" {
-  provider                  = aws.us_east_1
-  domain_name               = var.domain_name
-  subject_alternative_names = var.subject_alternative_names
-  validation_method         = "DNS"
-
-  lifecycle {
-    create_before_destroy = true
-  }
-
-  tags = {
-    Name = "${var.domain_name}-cf-certificate"
-  }
-}
-resource "aws_route53_record" "cf_validation" {
-  for_each = {
-    for dvo in aws_acm_certificate.cf_cert.domain_validation_options :
-    dvo.domain_name => {
-      name   = dvo.resource_record_name
-      record = dvo.resource_record_value
-      type   = dvo.resource_record_type
+terraform {
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+      configuration_aliases = [aws.us_east_1]
     }
   }
-
-  zone_id = var.route53_zone_id
-  name    = each.value.name
-  type    = each.value.type
-  ttl     = 60
-  records = [each.value.record]
 }
-
-resource "aws_acm_certificate_validation" "cf_cert_validation" {
-  provider                  = aws.us_east_1
-  certificate_arn           = aws_acm_certificate.cf_cert.arn
-  validation_record_fqdns   = [for record in aws_route53_record.cf_validation : record.fqdn]
-  depends_on                = [aws_route53_record.cf_validation]
-}
-
 resource "aws_wafv2_web_acl" "cf_waf" {
   provider = aws.us_east_1   
   name     = "url-shortener-cf-waf"
@@ -145,10 +110,10 @@ resource "aws_cloudfront_distribution" "cf" {
     }
   }
 
-  viewer_certificate {
-    acm_certificate_arn = aws_acm_certificate.cf_cert.arn
-    ssl_support_method  = "sni-only"
-  }
+ viewer_certificate {
+  acm_certificate_arn = var.acm_certificate_arn
+  ssl_support_method  = "sni-only" 
+  } 
 
   web_acl_id = aws_wafv2_web_acl.cf_waf.arn  
-}
+} 
