@@ -8,6 +8,11 @@ on:
       - main
     paths:
       - "app/**"
+  push:
+    branches:
+      - dev
+      - staging
+      - main
 
 env:
   AWS_REGION: eu-west-2
@@ -33,9 +38,9 @@ jobs:
       - name: Detect Environment
         id: set-env
         run: |
-          # Get the branch name for PRs or pushes
+          # Use target branch for PRs, current branch for pushes
           BRANCH="${GITHUB_BASE_REF:-${GITHUB_REF##*/}}"
-          echo "Target branch detected: $BRANCH"
+          echo "Target branch: $BRANCH"
 
           if [ "$BRANCH" = "dev" ]; then
             echo "ENV=dev" >> $GITHUB_ENV
@@ -56,24 +61,30 @@ jobs:
             echo "env_name=prod" >> $GITHUB_OUTPUT
 
           else
-            echo "Branch '$BRANCH' is not configured. Exiting."
-            exit 1
-          fi
+            # Feature branches or unknown branches: skip build safely
+            echo "Branch '$BRANCH' is not configured. Skipping build."
+            echo "image=" >> $GITHUB_OUTPUT
+            echo "env_name=" >> $GITHUB_OUTPUT
+            exit 0
 
       - name: Configure AWS
+        if: ${{ steps.set-env.outputs.env_name != '' }}
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ env.ROLE }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to ECR
+        if: ${{ steps.set-env.outputs.env_name != '' }}
         uses: aws-actions/amazon-ecr-login@v1
 
       - name: Build & Push Docker Image
         id: build
+        if: ${{ steps.set-env.outputs.env_name != '' }}
         run: |
           TAG="${ENV}-${GITHUB_SHA}"
           IMAGE="${REPO}:${TAG}"
+          echo "Building image: $IMAGE"
 
           docker build -t $IMAGE -f app/Dockerfile app/
           docker push $IMAGE
@@ -81,6 +92,7 @@ jobs:
           echo "image=$IMAGE" >> $GITHUB_OUTPUT
 
       - name: Scan Image
+        if: ${{ steps.set-env.outputs.env_name != '' }}
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ steps.build.outputs.image }}
@@ -89,10 +101,10 @@ jobs:
           exit-code: 1
           ignore-unfixed: true
 
-
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
+    if: ${{ needs.build-and-push.outputs.image != '' }}
 
     steps:
       - name: Checkout
@@ -109,7 +121,6 @@ jobs:
             echo "ROLE=${{ secrets.AWS_ROLE_STAGING }}" >> $GITHUB_ENV
           else
             echo "ROLE=${{ secrets.AWS_ROLE_PROD }}" >> $GITHUB_ENV
-          fi
 
       - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v2
@@ -120,13 +131,7 @@ jobs:
       - name: Register ECS Task Definition
         run: |
           IMAGE="${{ needs.build-and-push.outputs.image }}"
-
           echo "Using image: $IMAGE"
-
-          if [ -z "$IMAGE" ]; then
-            echo "Image variable is empty"
-            exit 1
-          fi
 
           cat > task-def.json <<EOF
           {
