@@ -34,8 +34,8 @@ jobs:
         id: set-env
         run: |
           # Get the branch name for PRs or pushes
-          BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF##*/}}"
-          echo "Branch detected: $BRANCH"
+          BRANCH="${GITHUB_BASE_REF:-${GITHUB_REF##*/}}"
+          echo "Target branch detected: $BRANCH"
 
           if [ "$BRANCH" = "dev" ]; then
             echo "ENV=dev" >> $GITHUB_ENV
