@@ -5,7 +5,7 @@ variable "aws_region" {
 
 variable "vpc_cidr" {
   type    = string
-  default = "10.2.0.0/16"  # separate staging VPC
+  default = "10.2.0.0/16" 
 }
 
 variable "vpc_name" {
@@ -71,12 +71,12 @@ variable "project_name" {
 
 variable "task_cpu" {
   type    = string
-  default = "256"  # smaller than prod
+  default = "256"  
 }
 
 variable "task_memory" {
   type    = string
-  default = "512"  # smaller than prod
+  default = "512" 
 }
 
 variable "dynamodb_table_name" {

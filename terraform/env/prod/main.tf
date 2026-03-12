@@ -6,7 +6,6 @@ provider "aws" {
   region = "us-east-1"
 }
 
-# VPC Module
 module "vpc" {
   source               = "../../modules/vpc"
   vpc_name                = var.vpc_name
@@ -20,14 +19,13 @@ module "vpc" {
   private_route_table_ids = module.vpc.private_route_table_ids
   region                  = var.aws_region
 }
-# Security Groups
+
 module "sg" {
   source       = "../../modules/sg"
   vpc_id       = module.vpc.vpc_id
   project_name = var.project_name
 }
 
-# IAM Roles
 module "iam" {
   source                       = "../../modules/iam"
   ecs_task_execution_role_name = "ecsExecutionRoleDemo"
@@ -35,7 +33,6 @@ module "iam" {
   dynamodb_table_arn           = module.dynamodb.dynamodb_table_arn
 }
 
-# ECS Cluster and Service
 module "ecs" {
   source = "../../modules/ecs"
 
@@ -68,7 +65,6 @@ module "ecs" {
   
 }
 
-# ALB Module
 module "alb" {
   source            = "../../modules/alb"
   name              = "URLSHORT-alb-prod"
@@ -80,7 +76,6 @@ module "alb" {
 }
 
 
-# ACM Module
 module "acm" {
 
   source       = "../../modules/acm"
@@ -92,7 +87,6 @@ module "acm" {
   }
 }
 
-# CloudFront Module
 module "cloudfront" {
   source = "../../modules/cloudfront"
 
@@ -105,9 +99,9 @@ module "cloudfront" {
    providers = {
     aws.us_east_1 = aws.us_east_1
 
+  }
 }
-}
-# CloudWatch
+
 module "cloudwatch" {
   source        = "../../modules/cloudwatch"
   project_name  = var.project_name
@@ -118,7 +112,6 @@ module "cloudwatch" {
   arn_suffix    = module.alb.alb_arn_suffix
 }
 
-# CodeDeploy
 module "codedeploy" {
   source = "../../modules/codedeploy"
 
@@ -129,7 +122,6 @@ module "codedeploy" {
   alb_https_listener_arn = [module.alb.https_listener_arn]
 }
 
-# DynamoDB
 module "dynamodb" {
   source   = "../../modules/dynamodb"
   tag_name = "url-shortener"

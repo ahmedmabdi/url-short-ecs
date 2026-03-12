@@ -43,7 +43,7 @@ resource "aws_cloudwatch_metric_alarm" "alb_5xx_high" {
   period              = 60
   statistic           = "Sum"
   threshold           = 5
-  alarm_description   = "Alarm when ALB target 5XX errors exceed threshold"
+  alarm_description   = "Alarm when alb target 5XX errors exceed threshold"
 
   dimensions = {
     LoadBalancer = var.arn_suffix

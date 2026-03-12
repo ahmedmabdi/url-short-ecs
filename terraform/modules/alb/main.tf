@@ -9,8 +9,7 @@ resource "aws_lb" "this" {
 
   tags = {
     Name = var.name
-  }
-  
+  } 
 }
 
 resource "aws_lb_target_group" "this" {

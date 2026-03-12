@@ -1,6 +1,5 @@
 import os, boto3
 
-# TABLE_NAME must be provided via ECS task environment
 _table = boto3.resource("dynamodb", region_name=os.environ["AWS_REGION"]).Table(os.environ["TABLE_NAME"])
 
 def put_mapping(short_id: str, url: str):
