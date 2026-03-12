@@ -92,21 +92,29 @@ jobs:
           severity: CRITICAL
           exit-code: 1
           ignore-unfixed: true
-          
+
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-
+        uses: actions/checkout@v3 
+      - name: Set AWS Role for deploy
+        run: |
+           if [ "${{ needs.build-and-push.outputs.env_name }}" = "dev" ]; then
+           echo "AWS_ROLE=${{ secrets.AWS_ROLE_DEV }}" >> $GITHUB_ENV
+           elif [ "${{ needs.build-and-push.outputs.env_name }}" = "staging" ]; then
+           echo "AWS_ROLE=${{ secrets.AWS_ROLE_STAGING }}" >> $GITHUB_ENV
+           else
+           echo "AWS_ROLE=${{ secrets.AWS_ROLE_PROD }}" >> $GITHUB_ENV
+           fi
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ env.AWS_ROLE }}
           aws-region: ${{ env.AWS_REGION }}
-
+         
       - name: Register ECS task definition
         run: |
           cat <<EOF > task-def.json
