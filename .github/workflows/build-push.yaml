@@ -23,7 +23,7 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     outputs:
-      image: ${{ steps.build-image.outputs.image }}
+      image: ${{ steps.build.outputs.image }}
       env_name: ${{ steps.set-env.outputs.env_name }}
 
     steps:
@@ -34,62 +34,50 @@ jobs:
         id: set-env
         run: |
           BRANCH="${GITHUB_BASE_REF:-${GITHUB_REF##*/}}"
-          echo "Branch detected: $BRANCH"
 
           if [ "$BRANCH" = "dev" ]; then
             echo "ENV=dev" >> $GITHUB_ENV
-            echo "AWS_ROLE=${{ secrets.AWS_ROLE_DEV }}" >> $GITHUB_ENV
-            echo "ECR_REPO=${{ secrets.ECR_REPO_DEV }}" >> $GITHUB_ENV
+            echo "ROLE=${{ secrets.AWS_ROLE_DEV }}" >> $GITHUB_ENV
+            echo "REPO=${{ secrets.ECR_REPO_DEV }}" >> $GITHUB_ENV
             echo "env_name=dev" >> $GITHUB_OUTPUT
 
           elif [ "$BRANCH" = "staging" ]; then
             echo "ENV=staging" >> $GITHUB_ENV
-            echo "AWS_ROLE=${{ secrets.AWS_ROLE_STAGING }}" >> $GITHUB_ENV
-            echo "ECR_REPO=${{ secrets.ECR_REPO_STAGING }}" >> $GITHUB_ENV
+            echo "ROLE=${{ secrets.AWS_ROLE_STAGING }}" >> $GITHUB_ENV
+            echo "REPO=${{ secrets.ECR_REPO_STAGING }}" >> $GITHUB_ENV
             echo "env_name=staging" >> $GITHUB_OUTPUT
 
-          elif [ "$BRANCH" = "main" ]; then
-            echo "ENV=prod" >> $GITHUB_ENV
-            echo "AWS_ROLE=${{ secrets.AWS_ROLE_PROD }}" >> $GITHUB_ENV
-            echo "ECR_REPO=${{ secrets.ECR_REPO_PROD }}" >> $GITHUB_ENV
-            echo "env_name=prod" >> $GITHUB_OUTPUT
-
           else
-            echo "Branch not configured for deployment"
-            exit 1
+            echo "ENV=prod" >> $GITHUB_ENV
+            echo "ROLE=${{ secrets.AWS_ROLE_PROD }}" >> $GITHUB_ENV
+            echo "REPO=${{ secrets.ECR_REPO_PROD }}" >> $GITHUB_ENV
+            echo "env_name=prod" >> $GITHUB_OUTPUT
           fi
 
-      - name: Configure AWS credentials
+      - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: ${{ env.AWS_ROLE }}
+          role-to-assume: ${{ env.ROLE }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Login to Amazon ECR
+      - name: Login to ECR
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Build Docker image
-        id: build-image
+      - name: Build & Push Docker Image
+        id: build
         run: |
-          IMAGE_TAG="${ENV}-${GITHUB_SHA}"
-          IMAGE_URI="${ECR_REPO}:$IMAGE_TAG"
+          TAG="${ENV}-${GITHUB_SHA}"
+          IMAGE="${REPO}:${TAG}"
 
-          echo "Building image $IMAGE_URI"
+          docker build -t $IMAGE -f app/Dockerfile app/
+          docker push $IMAGE
 
-          docker buildx build \
-            --platform linux/amd64 \
-            -t $IMAGE_URI \
-            -f app/Dockerfile app/
+          echo "image=$IMAGE" >> $GITHUB_OUTPUT
 
-          docker push $IMAGE_URI
-
-          echo "image=$IMAGE_URI" >> $GITHUB_OUTPUT
-
-      - name: Scan Docker image with Trivy
+      - name: Scan Image
         uses: aquasecurity/trivy-action@master
         with:
-          scan-type: image
-          image-ref: ${{ steps.build-image.outputs.image }}
+          image-ref: ${{ steps.build.outputs.image }}
           format: table
           severity: CRITICAL
           exit-code: 1
@@ -110,22 +98,29 @@ jobs:
           echo "ENV=$ENV" >> $GITHUB_ENV
 
           if [ "$ENV" = "dev" ]; then
-            echo "AWS_ROLE=${{ secrets.AWS_ROLE_DEV }}" >> $GITHUB_ENV
+            echo "ROLE=${{ secrets.AWS_ROLE_DEV }}" >> $GITHUB_ENV
           elif [ "$ENV" = "staging" ]; then
-            echo "AWS_ROLE=${{ secrets.AWS_ROLE_STAGING }}" >> $GITHUB_ENV
+            echo "ROLE=${{ secrets.AWS_ROLE_STAGING }}" >> $GITHUB_ENV
           else
-            echo "AWS_ROLE=${{ secrets.AWS_ROLE_PROD }}" >> $GITHUB_ENV
+            echo "ROLE=${{ secrets.AWS_ROLE_PROD }}" >> $GITHUB_ENV
           fi
 
-      - name: Configure AWS credentials
+      - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: ${{ env.AWS_ROLE }}
+          role-to-assume: ${{ env.ROLE }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Register ECS task definition
+      - name: Register ECS Task Definition
         run: |
           IMAGE="${{ needs.build-and-push.outputs.image }}"
+
+          echo "Using image: $IMAGE"
+
+          if [ -z "$IMAGE" ]; then
+            echo "Image variable is empty"
+            exit 1
+          fi
 
           cat > task-def.json <<EOF
           {
@@ -166,7 +161,7 @@ jobs:
         run: |
           aws s3 cp ${{ env.APPSPEC_FILE }} s3://${{ env.S3_BUCKET }}/appspec-${ENV}.yml
 
-      - name: Trigger CodeDeploy Deployment
+      - name: Trigger CodeDeploy
         run: |
           aws deploy create-deployment \
             --application-name url-shortener-${ENV} \
