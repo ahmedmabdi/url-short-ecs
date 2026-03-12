@@ -12,7 +12,7 @@ on:
 env:
   AWS_REGION: eu-west-2
   S3_BUCKET: codedeploy-artifacts-ecs
-
+  APPSPEC_FILE: codedeploy/appspec.yml  
 permissions:
   id-token: write
   contents: read
@@ -24,7 +24,6 @@ jobs:
     outputs:
       image: ${{ steps.build-image.outputs.image }}
       env_name: ${{ steps.set-env.outputs.env_name }}
-      appspec: ${{ steps.set-env.outputs.appspec }}
 
     steps:
       - name: Checkout
@@ -33,7 +32,7 @@ jobs:
       - name: Detect Environment
         id: set-env
         run: |
-          BRANCH="${GITHUB_BASE_REF}"
+          BRANCH="${GITHUB_BASE_REF:-${GITHUB_REF##*/}}"
           echo "Branch detected: $BRANCH"
 
           if [ "$BRANCH" = "dev" ]; then
@@ -41,26 +40,22 @@ jobs:
             echo "AWS_ROLE=${{ secrets.AWS_ROLE_DEV }}" >> $GITHUB_ENV
             echo "ECR_REPO=${{ secrets.ECR_REPO_DEV }}" >> $GITHUB_ENV
             echo "env_name=dev" >> $GITHUB_OUTPUT
-            echo "appspec=codedeploy/appspec-dev.yml" >> $GITHUB_OUTPUT
 
           elif [ "$BRANCH" = "staging" ]; then
             echo "ENV=staging" >> $GITHUB_ENV
             echo "AWS_ROLE=${{ secrets.AWS_ROLE_STAGING }}" >> $GITHUB_ENV
             echo "ECR_REPO=${{ secrets.ECR_REPO_STAGING }}" >> $GITHUB_ENV
             echo "env_name=staging" >> $GITHUB_OUTPUT
-            echo "appspec=codedeploy/appspec-staging.yml" >> $GITHUB_OUTPUT
 
           elif [ "$BRANCH" = "main" ]; then
             echo "ENV=prod" >> $GITHUB_ENV
             echo "AWS_ROLE=${{ secrets.AWS_ROLE_PROD }}" >> $GITHUB_ENV
             echo "ECR_REPO=${{ secrets.ECR_REPO_PROD }}" >> $GITHUB_ENV
             echo "env_name=prod" >> $GITHUB_OUTPUT
-            echo "appspec=codedeploy/appspec-prod.yml" >> $GITHUB_OUTPUT
 
           else
             echo "Branch not configured for deployment"
             exit 1
-          fi
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -96,7 +91,6 @@ jobs:
           exit-code: 1
           ignore-unfixed: true
 
-
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
@@ -105,15 +99,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Set environment variables
-        run: |
-          echo "ENV=${{ needs.build-and-push.outputs.env_name }}" >> $GITHUB_ENV
-          echo "APPSPEC_FILE=${{ needs.build-and-push.outputs.appspec }}" >> $GITHUB_ENV
-
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_DEV }}
+          role-to-assume: ${{ env.AWS_ROLE }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Register ECS task definition
@@ -142,20 +131,22 @@ jobs:
           }
           EOF
 
-          TASK_ARN=$(aws ecs register-task-definition \
+           TASK_ARN=$(aws ecs register-task-definition \
             --cli-input-json file://task-def.json \
             --query 'taskDefinition.taskDefinitionArn' \
             --output text)
 
           echo "TASK_DEF_ARN=$TASK_ARN" >> $GITHUB_ENV
 
+
+
       - name: Inject Task ARN into AppSpec
         run: |
-          sed -i "s|<TASK_DEFINITION_ARN>|${TASK_DEF_ARN}|g" $APPSPEC_FILE
+          sed -i "s|<TASK_DEFINITION_ARN>|${TASK_DEF_ARN}|g" ${{ env.APPSPEC_FILE }}
 
       - name: Upload AppSpec to S3
         run: |
-          aws s3 cp $APPSPEC_FILE s3://${{ env.S3_BUCKET }}/appspec-${ENV}.yml
+          aws s3 cp ${{ env.APPSPEC_FILE }} s3://${{ env.S3_BUCKET }}/appspec-${ENV}.yml
 
       - name: Trigger CodeDeploy Deployment
         run: |
