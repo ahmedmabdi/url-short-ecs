@@ -1,21 +1,27 @@
-name: Terraform Plan - prod
+name: Terraform Apply - Prod
 
 on:
-  pull_request:
+  push:
     branches:
-      - prod
+      - main
     paths:
       - 'terraform/env/prod/**'
       - 'terraform/modules/**'
 
 jobs:
-  terraform-plan:
-    name: Terraform Plan
+  terraform-apply:
+    name: Terraform Apply - Prod
     runs-on: ubuntu-latest
 
     permissions:
       contents: read
-      id-token: write  
+      id-token: write
+
+    concurrency:
+      group: terraform-prod
+      cancel-in-progress: true
+
+    environment: prod   
 
     steps:
       - name: Checkout
@@ -24,7 +30,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: ${{ secrets['AWS_ROLE_PROD'] }}
+          role-to-assume: ${{ secrets.AWS_ROLE_PROD }}
           aws-region: eu-west-2
 
       - name: Setup Terraform
@@ -32,13 +38,9 @@ jobs:
         with:
           terraform_version: 1.14.0
 
-      - name: Terraform Format
-        working-directory: terraform/env/prod
-        run: terraform fmt -recursive
-
       - name: Terraform Init
         working-directory: terraform/env/prod
-        run: terraform init 
+        run: terraform init
 
       - name: Terraform Validate
         working-directory: terraform/env/prod
@@ -48,4 +50,6 @@ jobs:
         working-directory: terraform/env/prod
         run: terraform plan -var-file=terraform.tfvars -out=tfplan
 
-    
+      - name: Terraform Apply
+        working-directory: terraform/env/prod
+        run: terraform apply -auto-approve tfplan
