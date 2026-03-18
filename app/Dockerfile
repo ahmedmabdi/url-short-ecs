@@ -12,6 +12,7 @@ COPY src/ ./src
 # copies your application source code , app code changes frequently so its copied after dependencies to keep builds fast
 
 
+
 # Second stage: runtime image - switch from distroless to python slim or debian
 FROM python:3.12-slim
 WORKDIR /app/src
