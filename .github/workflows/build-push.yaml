@@ -1,76 +1,202 @@
-name: Build, Scan & Push Docker Image
+name: Build, Scan & Deploy Docker Image
 
 on:
-  pull_request:
+  push:
     branches:
       - dev
       - staging
       - main
-    paths: 
-      - 'app/**' 
+    paths:
+      - "app/**"
+
 env:
   AWS_REGION: eu-west-2
+  S3_BUCKET: codedeploy-artifacts-ecs
+  APPSPEC_FILE: codedeploy/appspec.yml
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
+
   build-and-push:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write  
+    outputs:
+      env_name: ${{ steps.set-env.outputs.env_name }}
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Set Environment
+      - name: Detect Environment
+        id: set-env
         run: |
-          BRANCH="${GITHUB_BASE_REF:-${GITHUB_REF##*/}}"
-          echo "Branch detected: $BRANCH"
+          BRANCH="${GITHUB_REF_NAME}"
+          echo "Branch: $BRANCH"
 
           if [ "$BRANCH" = "dev" ]; then
-          echo "ENV=dev" >> $GITHUB_ENV
-          echo "AWS_ROLE=${{ secrets.AWS_ROLE_DEV }}" >> $GITHUB_ENV
-          echo "ECR_REPO=${{ secrets.ECR_REPO_DEV }}" >> $GITHUB_ENV
+            echo "ENV=dev"                               >> $GITHUB_ENV
+            echo "ROLE=${{ secrets.AWS_ROLE_DEV }}"     >> $GITHUB_ENV
+            echo "REPO=${{ secrets.ECR_REPO_DEV }}"     >> $GITHUB_ENV
+            echo "env_name=dev"                         >> $GITHUB_OUTPUT
 
           elif [ "$BRANCH" = "staging" ]; then
-          echo "ENV=staging" >> $GITHUB_ENV
-          echo "AWS_ROLE=${{ secrets.AWS_ROLE_STAGING }}" >> $GITHUB_ENV
-          echo "ECR_REPO=${{ secrets.ECR_REPO_STAGING }}" >> $GITHUB_ENV
+            echo "ENV=staging"                          >> $GITHUB_ENV
+            echo "ROLE=${{ secrets.AWS_ROLE_STAGING }}" >> $GITHUB_ENV
+            echo "REPO=${{ secrets.ECR_REPO_STAGING }}" >> $GITHUB_ENV
+            echo "env_name=staging"                     >> $GITHUB_OUTPUT
 
           elif [ "$BRANCH" = "main" ]; then
-          echo "ENV=prod" >> $GITHUB_ENV
-          echo "AWS_ROLE=${{ secrets.AWS_ROLE_PROD }}" >> $GITHUB_ENV
-          echo "ECR_REPO=${{ secrets.ECR_REPO_PROD }}" >> $GITHUB_ENV
+            echo "ENV=prod"                             >> $GITHUB_ENV
+            echo "ROLE=${{ secrets.AWS_ROLE_PROD }}"    >> $GITHUB_ENV
+            echo "REPO=${{ secrets.ECR_REPO_PROD }}"    >> $GITHUB_ENV
+            echo "env_name=prod"                        >> $GITHUB_OUTPUT
+
           else
-          echo "Branch not configured for deployment"
-          exit 1
+            echo "Branch '$BRANCH' is not configured. Exiting."
+            exit 1
           fi
 
-      - name: Configure AWS credentials
+      - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: ${{ env.AWS_ROLE }}
+          role-to-assume: ${{ env.ROLE }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Login to Amazon ECR
+      - name: Login to ECR
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Build Docker image
+      - name: Build Docker Image
+        id: build
         run: |
-          IMAGE_TAG="${ENV}-${GITHUB_SHA}"
-          IMAGE_URI="${ECR_REPO}:$IMAGE_TAG"
-          docker buildx build --platform linux/amd64 -t $IMAGE_URI -f app/Dockerfile app/
-          echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
+          TAG="${ENV}-${GITHUB_SHA}"
+          IMAGE="${REPO}:${TAG}"
+          docker build -t $IMAGE -f app/Dockerfile app/
+          echo "image=$IMAGE" >> $GITHUB_OUTPUT
 
-      - name: Scan Docker image with Trivy
+      - name: Scan Image
         uses: aquasecurity/trivy-action@master
         with:
-          scan-type: image
-          image-ref: ${{ env.IMAGE_URI }}
+          image-ref: ${{ steps.build.outputs.image }}
           format: table
           severity: CRITICAL
           exit-code: 1
           ignore-unfixed: true
 
-      - name: Push Docker image to ECR
-        run: docker push ${{ env.IMAGE_URI }}
+      - name: Push Docker Image
+        run: docker push ${{ steps.build.outputs.image }}
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set Environment Variables
+        run: |
+          ENV="${{ needs.build-and-push.outputs.env_name }}"
+          echo "ENV=$ENV" >> $GITHUB_ENV
+
+          if [ "$ENV" = "dev" ]; then
+            echo "REPO=${{ secrets.ECR_REPO_DEV }}"     >> $GITHUB_ENV
+            echo "ROLE=${{ secrets.AWS_ROLE_DEV }}"     >> $GITHUB_ENV
+
+          elif [ "$ENV" = "staging" ]; then
+            echo "REPO=${{ secrets.ECR_REPO_STAGING }}" >> $GITHUB_ENV
+            echo "ROLE=${{ secrets.AWS_ROLE_STAGING }}" >> $GITHUB_ENV
+
+          else
+            echo "REPO=${{ secrets.ECR_REPO_PROD }}"    >> $GITHUB_ENV
+            echo "ROLE=${{ secrets.AWS_ROLE_PROD }}"    >> $GITHUB_ENV
+          fi
+
+          echo "EXEC_ROLE=${{ secrets.ECS_EXECUTION_ROLE }}" >> $GITHUB_ENV
+
+      - name: Reconstruct Image URI
+        run: |
+          IMAGE="${REPO}:${ENV}-${{ github.sha }}"
+          echo "IMAGE=$IMAGE" >> $GITHUB_ENV
+          echo "Using image: $IMAGE"
+
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ env.ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Register ECS Task Definition
+        run: |
+          if [ -z "$IMAGE" ]; then
+            echo "IMAGE is empty - something went wrong reconstructing the URI"
+            exit 1
+          fi
+
+          cat > task-def.json << 'ENDOFFILE'
+          {
+            "family": "url-short-ENV_PLACEHOLDER",
+            "networkMode": "awsvpc",
+            "requiresCompatibilities": ["FARGATE"],
+            "cpu": "256",
+            "memory": "512",
+            "executionRoleArn": "EXEC_ROLE_PLACEHOLDER",
+            "containerDefinitions": [
+              {
+                "name": "urlshort",
+                "image": "IMAGE_PLACEHOLDER",
+                "essential": true,
+                "portMappings": [
+                  {
+                    "containerPort": 8080,
+                    "protocol": "tcp"
+                  }
+                ]
+              }
+            ]
+          }
+          ENDOFFILE
+
+          sed -i "s|ENV_PLACEHOLDER|${ENV}|g"           task-def.json
+          sed -i "s|EXEC_ROLE_PLACEHOLDER|${EXEC_ROLE}|g" task-def.json
+          sed -i "s|IMAGE_PLACEHOLDER|${IMAGE}|g"       task-def.json
+
+          cat task-def.json | python3 -m json.tool > /dev/null || {
+            echo "Invalid JSON in task-def.json"
+            exit 1
+          }
+
+          TASK_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file://task-def.json \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+
+          echo "Registered task: $TASK_ARN"
+          echo "TASK_DEF_ARN=$TASK_ARN" >> $GITHUB_ENV
+
+      - name: Inject Task ARN into AppSpec
+        run: |
+          sed -i "s|<TASK_DEFINITION_ARN>|${TASK_DEF_ARN}|g" ${{ env.APPSPEC_FILE }}
+
+      - name: Upload AppSpec to S3
+        run: |
+          aws s3 cp ${{ env.APPSPEC_FILE }} s3://${{ env.S3_BUCKET }}/appspec-${ENV}.yml
+
+      - name: Trigger CodeDeploy
+        run: |
+          DEPLOY_ID=$(aws deploy create-deployment \
+            --application-name url-shortener-${ENV} \
+            --deployment-group-name blue-green-${ENV} \
+            --s3-location bucket=${{ env.S3_BUCKET }},key=appspec-${ENV}.yml,bundleType=YAML \
+            --query 'deploymentId' \
+            --output text)
+
+          echo "Deployment ID: $DEPLOY_ID"
+          echo "DEPLOY_ID=$DEPLOY_ID" >> $GITHUB_ENV
+
+      - name: Wait for CodeDeploy
+        run: |
+          echo "Waiting for deployment $DEPLOY_ID to complete..."
+          aws deploy wait deployment-successful --deployment-id $DEPLOY_ID
+          echo "Deployment succeeded."
