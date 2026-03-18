@@ -1,4 +1,4 @@
-name: Terraform Apply - staging
+name: Terraform Apply - Staging
 
 on:
   pull_request:
@@ -9,15 +9,17 @@ on:
       - 'terraform/modules/**'
 
 jobs:
-  terraform-plan:
-    name: Terraform Plan
+  terraform-apply:
+    name: Terraform Apply - Staging
     runs-on: ubuntu-latest
-
+    environment: staging   
     permissions:
       contents: read
-      id-token: write  
-    
-    environment: dev  
+      id-token: write
+
+    concurrency:
+      group: terraform-staging
+      cancel-in-progress: true
 
     steps:
       - name: Checkout
@@ -26,7 +28,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: ${{ secrets['AWS_ROLE_STAGING'] }}
+          role-to-assume: ${{ secrets.AWS_ROLE_STAGING }}
           aws-region: eu-west-2
 
       - name: Setup Terraform
@@ -34,20 +36,10 @@ jobs:
         with:
           terraform_version: 1.14.0
 
-      - name: Terraform Format
-        working-directory: terraform/env/staging
-        run: terraform fmt -recursive
-
       - name: Terraform Init
         working-directory: terraform/env/staging
-        run: terraform init 
+        run: terraform init
 
-      - name: Terraform Validate
+      - name: Terraform Apply
         working-directory: terraform/env/staging
-        run: terraform validate
-
-      - name: Terraform Plan
-        working-directory: terraform/env/staging
-        run: terraform plan -var-file=terraform.tfvars -out=tfplan
-
-    
+        run: terraform apply -auto-approve -var-file=terraform.tfvars
