@@ -8,7 +8,15 @@ on:
       - main
     paths:
       - "app/**"
-
+on:
+  pull_request:
+    branches:
+      - dev
+      - staging
+      - main
+    paths:
+      - "app/**"
+      
 env:
   AWS_REGION: eu-west-2
   S3_BUCKET: codedeploy-artifacts-ecs
