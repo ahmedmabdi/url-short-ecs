@@ -142,6 +142,7 @@ jobs:
             "cpu": "256",
             "memory": "512",
             "executionRoleArn": "EXEC_ROLE_PLACEHOLDER",
+            "taskRoleArn": "TASK_ROLE_PLACEHOLDER",
             "containerDefinitions": [
               {
                 "name": "urlshort",
@@ -160,7 +161,7 @@ jobs:
                    },
                    {
                       "name": "TABLE_NAME",
-                      "value": "arn:aws:dynamodb:eu-west-2:471112781681:table/urlshortener-dev-table"
+                      "value": "arn:aws:dynamodb:eu-west-2:471112781681:table/urlshortener-ENV_PLACEHOLDER-table"
                    }
                 ],
                 "logConfiguration": {
@@ -178,6 +179,7 @@ jobs:
 
           sed -i "s|ENV_PLACEHOLDER|${ENV}|g"           task-def.json
           sed -i "s|EXEC_ROLE_PLACEHOLDER|${EXEC_ROLE}|g" task-def.json
+          sed -i "s|TASK_ROLE_PLACEHOLDER|${TASK_ROLE}|g" task-def.json
           sed -i "s|IMAGE_PLACEHOLDER|${IMAGE}|g"       task-def.json
 
           cat task-def.json | python3 -m json.tool > /dev/null || {

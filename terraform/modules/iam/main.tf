@@ -94,3 +94,20 @@ resource "aws_iam_role_policy_attachment" "ecs_execution_read_secret_attach" {
   role       = aws_iam_role.ecs_execution_role.name
   policy_arn = aws_iam_policy.ecs_execution_read_secret.arn
 }
+
+resource "aws_iam_role_policy" "ecs_ssm_policy" {
+  name = "ecs-ssm-policy"
+  role = aws_iam_role.ecs_execution_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "ssm:GetParameters",
+        "ssm:GetParameter"
+      ]
+      Resource = "arn:aws:iam::471112781681:role/arn:aws:ssm:eu-west-2:471112781681:parameter/urlshortener/*"
+    }]
+  })
+}
