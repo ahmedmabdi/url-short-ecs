@@ -182,6 +182,13 @@ jobs:
           sed -i "s|TASK_ROLE_PLACEHOLDER|${TASK_ROLE}|g" task-def.json
           sed -i "s|IMAGE_PLACEHOLDER|${IMAGE}|g"       task-def.json
 
+          echo "=== ENV VARS ==="
+          echo "TASK_ROLE: ${TASK_ROLE}"
+          echo "EXEC_ROLE: ${EXEC_ROLE}"
+          echo "IMAGE: ${IMAGE}"
+          echo "=== TASK DEF ==="
+          cat task-def.json
+
           cat task-def.json | python3 -m json.tool > /dev/null || {
             echo "Invalid JSON in task-def.json"
             exit 1
