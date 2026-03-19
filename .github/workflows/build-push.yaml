@@ -153,6 +153,16 @@ jobs:
                     "protocol": "tcp"
                   }
                 ],
+                 "environment": [
+                   {
+                    "name": "AWS_REGION",
+                    "value": "eu-west-2"
+                   },
+                   {
+                      "name": "TABLE_NAME",
+                      "value": "arn:aws:dynamodb:eu-west-2:471112781681:table/urlshortener-dev-table"
+                   }
+                ],
                 "logConfiguration": {
                   "logDriver": "awslogs",
                   "options": {
