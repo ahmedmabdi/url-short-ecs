@@ -20,3 +20,6 @@ variable "alb_https_listener_arn" {
 variable "env" {
   type = string
 }
+variable "alb_test_listener_arn" {
+  type = list(string)
+}

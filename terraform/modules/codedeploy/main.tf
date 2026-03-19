@@ -41,18 +41,22 @@ resource "aws_codedeploy_deployment_group" "ecs_deployment_group" {
   }
 
   load_balancer_info {
-    target_group_pair_info {
-      prod_traffic_route {
-        listener_arns = var.alb_https_listener_arn
-      }
-      target_group {
-        name = var.prod_target_group_name
-      }
-      target_group {
-        name = var.test_target_group_name
-      }
+  target_group_pair_info {
+    prod_traffic_route {
+      listener_arns = var.alb_https_listener_arn
+    }
+    test_traffic_route {           
+      listener_arns = var.alb_test_listener_arn
+    }
+
+    target_group {
+      name = var.prod_target_group_name
+    }
+    target_group {
+      name = var.test_target_group_name
     }
   }
+}
 
   blue_green_deployment_config {
     terminate_blue_instances_on_deployment_success {

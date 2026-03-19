@@ -166,3 +166,15 @@ resource "aws_wafv2_web_acl_association" "alb_association" {
   resource_arn = aws_lb.this.arn
   web_acl_arn  = aws_wafv2_web_acl.alb_waf.arn
 }
+
+resource "aws_lb_listener" "test" {
+  load_balancer_arn = aws_lb.this.arn
+  port              = 8081
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.test.arn
+  }
+}
+

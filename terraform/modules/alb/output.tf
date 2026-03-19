@@ -35,3 +35,6 @@ output "prod_target_group_name" {
 output "test_target_group_name" {
   value = aws_lb_target_group.test.name
 }
+output "test_listener_arn" {
+  value = aws_lb_listener.test.arn
+}
