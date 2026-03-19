@@ -1,4 +1,4 @@
-container_name  = "urlshort"
+container_name  = "urlshort-staging"
 container_image = "471112781681.dkr.ecr.eu-west-2.amazonaws.com/urlshort:latest"
 container_port  = 8080
 aws_region      = "eu-west-2"

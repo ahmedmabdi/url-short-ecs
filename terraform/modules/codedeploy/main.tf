@@ -1,6 +1,6 @@
 
 resource "aws_iam_role" "codedeploy_role" {
-  name = "ecs-codedeploy-role"
+  name = "ecs-codedeploy-role-${var.env}"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -20,13 +20,13 @@ resource "aws_iam_role_policy_attachment" "codedeploy_ecs" {
 }
 
 resource "aws_codedeploy_app" "ecs_app" {
-  name = "url-shortener-ecs-app"
+  name = "url-shortener-${var.env}"
   compute_platform = "ECS"
 }
 
 resource "aws_codedeploy_deployment_group" "ecs_deployment_group" {
   app_name               = aws_codedeploy_app.ecs_app.name
-  deployment_group_name  = "url-shortener-blue-green"
+  deployment_group_name  = "blue-green-${var.env}"
   service_role_arn       = aws_iam_role.codedeploy_role.arn
   deployment_config_name = "CodeDeployDefault.ECSAllAtOnce" 
 

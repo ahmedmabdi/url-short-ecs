@@ -17,3 +17,6 @@ variable "test_target_group_name" {
 variable "alb_https_listener_arn" {
   type = list(string)  
 }
+variable "env" {
+  type = string
+}

@@ -117,6 +117,7 @@ module "codedeploy" {
   prod_target_group_name = module.alb.prod_target_group_arn
   test_target_group_name = module.alb.test_target_group_arn
   alb_https_listener_arn = [module.alb.https_listener_arn]
+  env = staging
 }
 
 module "dynamodb" {
