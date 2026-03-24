@@ -108,15 +108,16 @@ jobs:
           elif [ "$ENV" = "staging" ]; then
             echo "REPO=${{ secrets.ECR_REPO_STAGING }}" >> $GITHUB_ENV
             echo "ROLE=${{ secrets.AWS_ROLE_STAGING }}" >> $GITHUB_ENV
-            echo "LOG_GROUP=urlshortener-staging"               >> $GITHUB_ENV
+            echo "LOG_GROUP=urlshortener-staging"       >> $GITHUB_ENV
 
           else
             echo "REPO=${{ secrets.ECR_REPO_PROD }}"    >> $GITHUB_ENV
             echo "ROLE=${{ secrets.AWS_ROLE_PROD }}"    >> $GITHUB_ENV
-            echo "LOG_GROUP=urlshortener-prod"               >> $GITHUB_ENV
+            echo "LOG_GROUP=urlshortener-prod"          >> $GITHUB_ENV
           fi
 
           echo "EXEC_ROLE=${{ secrets.ECS_EXECUTION_ROLE }}" >> $GITHUB_ENV
+          echo "TASK_ROLE=${{ secrets.ECS_TASK_ROLE }}"      >> $GITHUB_ENV
 
       - name: Reconstruct Image URI
         run: |
@@ -157,20 +158,20 @@ jobs:
                     "protocol": "tcp"
                   }
                 ],
-                 "environment": [
-                   {
+                "environment": [
+                  {
                     "name": "AWS_REGION",
                     "value": "eu-west-2"
-                   },
-                   {
-                      "name": "TABLE_NAME",
-                      "value": "arn:aws:dynamodb:eu-west-2:471112781681:table/urlshortener-ENV_PLACEHOLDER-table"
-                   }
+                  },
+                  {
+                    "name": "TABLE_NAME",
+                    "value": "arn:aws:dynamodb:eu-west-2:471112781681:table/urlshortener-ENV_PLACEHOLDER-table"
+                  }
                 ],
                 "logConfiguration": {
                   "logDriver": "awslogs",
                   "options": {
-                    "awslogs-group": "/ecs/urlshortener",
+                    "awslogs-group": "/ecs/LOG_GROUP_PLACEHOLDER",
                     "awslogs-region": "eu-west-2",
                     "awslogs-stream-prefix": "urlshort"
                   }
@@ -180,17 +181,11 @@ jobs:
           }
           ENDOFFILE
 
-          sed -i "s|ENV_PLACEHOLDER|${ENV}|g"           task-def.json
-          sed -i "s|EXEC_ROLE_PLACEHOLDER|${EXEC_ROLE}|g" task-def.json
-          sed -i "s|TASK_ROLE_PLACEHOLDER|${TASK_ROLE}|g" task-def.json
-          sed -i "s|IMAGE_PLACEHOLDER|${IMAGE}|g"       task-def.json
-
-          echo "=== ENV VARS ==="
-          echo "TASK_ROLE: ${TASK_ROLE}"
-          echo "EXEC_ROLE: ${EXEC_ROLE}"
-          echo "IMAGE: ${IMAGE}"
-          echo "=== TASK DEF ==="
-          cat task-def.json
+          sed -i "s|ENV_PLACEHOLDER|${ENV}|g"                 task-def.json
+          sed -i "s|EXEC_ROLE_PLACEHOLDER|${EXEC_ROLE}|g"     task-def.json
+          sed -i "s|TASK_ROLE_PLACEHOLDER|${TASK_ROLE}|g"     task-def.json
+          sed -i "s|IMAGE_PLACEHOLDER|${IMAGE}|g"             task-def.json
+          sed -i "s|LOG_GROUP_PLACEHOLDER|${LOG_GROUP}|g"     task-def.json
 
           cat task-def.json | python3 -m json.tool > /dev/null || {
             echo "Invalid JSON in task-def.json"
