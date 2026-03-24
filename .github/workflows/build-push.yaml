@@ -206,7 +206,7 @@ jobs:
 
       - name: Upload AppSpec to S3
         run: |
-          aws s3 cp ${{ env.APPSPEC_FILE }} s3://${{ env.S3_BUCKET }}/appspec-${ENV}.yml
+          aws s3 cp ${{ env.APPSPEC_FILE }} s3://${{ env.S3_BUCKET }}/appspec.yml
 
       - name: Trigger CodeDeploy
         run: |
