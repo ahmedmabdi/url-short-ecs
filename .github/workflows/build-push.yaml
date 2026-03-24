@@ -103,14 +103,17 @@ jobs:
           if [ "$ENV" = "dev" ]; then
             echo "REPO=${{ secrets.ECR_REPO_DEV }}"     >> $GITHUB_ENV
             echo "ROLE=${{ secrets.AWS_ROLE_DEV }}"     >> $GITHUB_ENV
+            echo "LOG_GROUP=urlshortener"               >> $GITHUB_ENV
 
           elif [ "$ENV" = "staging" ]; then
             echo "REPO=${{ secrets.ECR_REPO_STAGING }}" >> $GITHUB_ENV
             echo "ROLE=${{ secrets.AWS_ROLE_STAGING }}" >> $GITHUB_ENV
+            echo "LOG_GROUP=urlshortener-staging"               >> $GITHUB_ENV
 
           else
             echo "REPO=${{ secrets.ECR_REPO_PROD }}"    >> $GITHUB_ENV
             echo "ROLE=${{ secrets.AWS_ROLE_PROD }}"    >> $GITHUB_ENV
+            echo "LOG_GROUP=urlshortener-prod"               >> $GITHUB_ENV
           fi
 
           echo "EXEC_ROLE=${{ secrets.ECS_EXECUTION_ROLE }}" >> $GITHUB_ENV
