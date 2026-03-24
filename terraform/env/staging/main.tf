@@ -114,10 +114,11 @@ module "codedeploy" {
 
   service_name           = module.ecs.service_name
   cluster_name           = module.ecs.cluster_name
-  prod_target_group_name = module.alb.prod_target_group_arn
-  test_target_group_name = module.alb.test_target_group_arn
+  prod_target_group_name = module.alb.prod_target_group_name
+  test_target_group_name = module.alb.test_target_group_name
   alb_https_listener_arn = [module.alb.https_listener_arn]
-  env = staging
+  alb_test_listener_arn  = [module.alb.test_listener_arn]
+  env = "staging"
 }
 
 module "dynamodb" {
