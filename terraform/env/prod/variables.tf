@@ -62,12 +62,12 @@ variable "container_port" {
 
 variable "project" {
   type    = string
-  default = "urlshortener-prod"
+  default = "urlshort-prod"
 }
 
 variable "project_name" {
   type    = string
-  default = "urlshortener-prod"
+  default = "urlshort-prod"
 }
 
 variable "task_cpu" {
