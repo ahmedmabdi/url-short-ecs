@@ -33,7 +33,7 @@ resource "aws_lb_target_group" "this" {
   }
 }
 resource "aws_lb_target_group" "prod" {
-  name        = "${var.name}-prod-tg"
+  name = substr("${var.name}-prod-tg", 0, 32)
   port        = 8080
   protocol    = "HTTP"
   target_type = "ip"
