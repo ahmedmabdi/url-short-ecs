@@ -1,13 +1,8 @@
 name: Terraform Apply - Staging
 
 on:
-  pull_request:
-    branches:
-      - staging
-    paths:
-      - 'terraform/env/staging/**'
-      - 'terraform/modules/**'
-
+  push:
+    branches: [staging]
 jobs:
   terraform-apply:
     name: Terraform Apply - Staging
