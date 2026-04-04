@@ -1,5 +1,8 @@
+variable "environment" {}
+
 resource "aws_iam_role" "ecs_execution_role" {
-  name = "ecsExecutionRole"
+  name = "${var.ecs_task_execution_role_name}-${var.environment}"
+
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
@@ -13,11 +16,11 @@ resource "aws_iam_role" "ecs_execution_role" {
 resource "aws_iam_role_policy_attachment" "ecs_execution_role_policy" {
   role       = aws_iam_role.ecs_execution_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-
 }
 
 resource "aws_iam_role" "ecs_task_role" {
-  name = "ecsTaskRole"
+  name = "${var.ecs_task_role_name}-${var.environment}"
+
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
@@ -29,7 +32,7 @@ resource "aws_iam_role" "ecs_task_role" {
 }
 
 resource "aws_iam_policy" "dynamodb_table_access" {
-  name        = "dynamodb-table-access"
+  name = "dynamodb-table-access-${var.environment}"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -58,7 +61,8 @@ data "aws_secretsmanager_secret" "table_name" {
 }
 
 resource "aws_iam_policy" "ecs_read_secret" {
-  name   = "ecs-task-read-secret"
+  name = "ecs-task-read-secret-${var.environment}"
+
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -77,7 +81,8 @@ resource "aws_iam_role_policy_attachment" "ecs_read_secret_attach" {
 }
 
 resource "aws_iam_policy" "ecs_execution_read_secret" {
-  name   = "ecs-execution-read-secret"
+  name = "ecs-execution-read-secret-${var.environment}"
+
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -96,7 +101,7 @@ resource "aws_iam_role_policy_attachment" "ecs_execution_read_secret_attach" {
 }
 
 resource "aws_iam_role_policy" "ecs_ssm_policy" {
-  name = "ecs-ssm-policy"
+  name = "ecs-ssm-policy-${var.environment}"
   role = aws_iam_role.ecs_execution_role.id
 
   policy = jsonencode({
@@ -107,7 +112,7 @@ resource "aws_iam_role_policy" "ecs_ssm_policy" {
         "ssm:GetParameters",
         "ssm:GetParameter"
       ]
-      Resource = "arn:aws:iam::471112781681:role/arn:aws:ssm:eu-west-2:471112781681:parameter/urlshortener/*"
+      Resource = "arn:aws:ssm:eu-west-2:471112781681:parameter/urlshortener/*"
     }]
   })
 }
