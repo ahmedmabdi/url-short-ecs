@@ -64,7 +64,6 @@ module "ecs" {
   region  = var.aws_region
 }
 
-
 module "alb" {
   source            = "../../modules/alb"
   name              = "URLSHORT-alb-dev"
