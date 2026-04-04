@@ -1,12 +1,7 @@
 name: Terraform Apply - Dev
 
 on:
-  pull_request:
-    branches:
-      - dev
-    paths:
-      - 'terraform/env/dev/**'
-      - 'terraform/modules/**'
+  workflow_dispatch:
 
 jobs:
   terraform-apply:
