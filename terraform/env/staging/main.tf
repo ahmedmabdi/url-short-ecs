@@ -62,7 +62,6 @@ module "ecs" {
   vpc_id  = module.vpc.vpc_id
   region  = var.aws_region
 }
-
 module "alb" {
   source            = "../../modules/alb"
   name              = "URLSHORT-alb-staging"
