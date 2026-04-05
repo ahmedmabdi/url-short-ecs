@@ -33,6 +33,7 @@ module "iam" {
   dynamodb_table_arn           = module.dynamodb.dynamodb_table_arn
 }
 
+
 module "ecs" {
   source = "../../modules/ecs"
 
