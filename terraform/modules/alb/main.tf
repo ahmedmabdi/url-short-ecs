@@ -5,7 +5,6 @@ terraform {
     }
   }
 }
-
 variable "environment" {}
 
 resource "aws_lb" "this" {
