@@ -5,7 +5,7 @@ on:
     branches: [staging]
     paths:
       - 'terraform/env/staging/**'
-      - 'terraform/modules/**'
+      
 jobs:
   terraform-apply:
     name: Terraform Apply - Staging
