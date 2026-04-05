@@ -1,13 +1,12 @@
 name: Terraform Apply - Prod
 
 on:
-  pull_request:
-    branches:
-      - main
+  push:
+    branches: [main]
     paths:
       - 'terraform/env/prod/**'
       - 'terraform/modules/**'
-
+      
 jobs:
   terraform-prepare:
     name: Terraform Plan for Prod

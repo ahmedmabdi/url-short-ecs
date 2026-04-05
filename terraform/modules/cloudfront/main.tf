@@ -1,15 +1,18 @@
 terraform {
   required_providers {
     aws = {
-      source = "hashicorp/aws"
+      source                = "hashicorp/aws"
       configuration_aliases = [aws.us_east_1]
     }
   }
 }
+
+variable "environment" {}
+
 resource "aws_wafv2_web_acl" "cf_waf" {
-  provider = aws.us_east_1   
-  name     = "url-shortener-cf-waf"
-  scope    = "CLOUDFRONT"
+  provider    = aws.us_east_1
+  name        = "url-shortener-cf-waf-${var.environment}"
+  scope       = "CLOUDFRONT"
 
   default_action {
     allow {}
@@ -17,7 +20,7 @@ resource "aws_wafv2_web_acl" "cf_waf" {
 
   visibility_config {
     cloudwatch_metrics_enabled = true
-    metric_name                = "cf-waf"
+    metric_name                = "cf-waf-${var.environment}"
     sampled_requests_enabled   = true
   }
 
@@ -38,7 +41,7 @@ resource "aws_wafv2_web_acl" "cf_waf" {
 
     visibility_config {
       cloudwatch_metrics_enabled = true
-      metric_name                = "managed-common-rules"
+      metric_name                = "managed-common-rules-cf-${var.environment}"
       sampled_requests_enabled   = true
     }
   }
@@ -60,7 +63,7 @@ resource "aws_wafv2_web_acl" "cf_waf" {
 
     visibility_config {
       cloudwatch_metrics_enabled = true
-      metric_name                = "rate-limit-rule"
+      metric_name                = "rate-limit-rule-cf-${var.environment}"
       sampled_requests_enabled   = true
     }
   }
@@ -110,10 +113,10 @@ resource "aws_cloudfront_distribution" "cf" {
     }
   }
 
- viewer_certificate {
-  acm_certificate_arn = var.acm_certificate_arn
-  ssl_support_method  = "sni-only" 
-  } 
+  viewer_certificate {
+    acm_certificate_arn = var.acm_certificate_arn
+    ssl_support_method  = "sni-only"
+  }
 
-  web_acl_id = aws_wafv2_web_acl.cf_waf.arn  
-} 
+  web_acl_id = aws_wafv2_web_acl.cf_waf.arn
+}

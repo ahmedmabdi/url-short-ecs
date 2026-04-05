@@ -28,6 +28,7 @@ module "sg" {
 
 module "iam" {
   source                       = "../../modules/iam"
+  environment = "dev"
   ecs_task_execution_role_name = "ecsExecutionRoleDemo"
   ecs_task_role_name           = "ecsTaskRoleDemo"
   dynamodb_table_arn           = module.dynamodb.dynamodb_table_arn
@@ -63,9 +64,9 @@ module "ecs" {
   vpc_id  = module.vpc.vpc_id
   region  = var.aws_region
 }
-
 module "alb" {
   source            = "../../modules/alb"
+  environment = "dev"
   name              = "URLSHORT-alb-dev"
   vpc_id            = module.vpc.vpc_id
   public_subnet_ids = module.vpc.public_subnet_ids
@@ -87,7 +88,7 @@ module "acm" {
 
 module "cloudfront" {
   source = "../../modules/cloudfront"
-
+  environment = "dev"
   alb_dns_name              = module.alb.alb_dns_name
   domain_name               = var.domain_name
   subject_alternative_names = var.subject_alternative_names

@@ -1,3 +1,12 @@
+terraform {
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+    }
+  }
+}
+variable "environment" {}
+
 resource "aws_lb" "this" {
   name               = var.name
   internal           = false
@@ -9,12 +18,12 @@ resource "aws_lb" "this" {
 
   tags = {
     Name = var.name
-  } 
+  }
 }
 
 resource "aws_lb_target_group" "this" {
   name        = "${var.name}-tg"
-  port       = 8080
+  port        = 8080
   protocol    = "HTTP"
   target_type = "ip"
   vpc_id      = var.vpc_id
@@ -32,8 +41,9 @@ resource "aws_lb_target_group" "this" {
     Name = "${var.name}-tg"
   }
 }
+
 resource "aws_lb_target_group" "prod" {
-  name = substr("${var.name}-prod-tg", 0, 32)
+  name        = substr("${var.name}-prod-tg", 0, 32)
   port        = 8080
   protocol    = "HTTP"
   target_type = "ip"
@@ -85,9 +95,9 @@ resource "aws_lb_listener" "http" {
       port        = "443"
       protocol    = "HTTPS"
       status_code = "HTTP_301"
-    } 
-  } 
-} 
+    }
+  }
+}
 
 resource "aws_lb_listener" "https" {
   load_balancer_arn = aws_lb.this.arn
@@ -102,9 +112,20 @@ resource "aws_lb_listener" "https" {
   }
 }
 
+resource "aws_lb_listener" "test" {
+  load_balancer_arn = aws_lb.this.arn
+  port              = 8081
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.test.arn
+  }
+}
+
 resource "aws_wafv2_web_acl" "alb_waf" {
-  name        = "url-shortener-alb-waf"
-  description = "waf protection for alb - managed rules + rate limiting"
+  name        = "url-shortener-alb-waf-${var.environment}"
+  description = "WAF protection for ALB - managed rules + rate limiting"
   scope       = "REGIONAL"
 
   default_action {
@@ -113,7 +134,7 @@ resource "aws_wafv2_web_acl" "alb_waf" {
 
   visibility_config {
     cloudwatch_metrics_enabled = true
-    metric_name                = "alb-waf"
+    metric_name                = "alb-waf-${var.environment}"
     sampled_requests_enabled   = true
   }
 
@@ -134,7 +155,7 @@ resource "aws_wafv2_web_acl" "alb_waf" {
 
     visibility_config {
       cloudwatch_metrics_enabled = true
-      metric_name                = "managed-common-rules"
+      metric_name                = "managed-common-rules-alb-${var.environment}"
       sampled_requests_enabled   = true
     }
   }
@@ -156,7 +177,7 @@ resource "aws_wafv2_web_acl" "alb_waf" {
 
     visibility_config {
       cloudwatch_metrics_enabled = true
-      metric_name                = "rate-limit-rule"
+      metric_name                = "rate-limit-rule-alb-${var.environment}"
       sampled_requests_enabled   = true
     }
   }
@@ -166,15 +187,3 @@ resource "aws_wafv2_web_acl_association" "alb_association" {
   resource_arn = aws_lb.this.arn
   web_acl_arn  = aws_wafv2_web_acl.alb_waf.arn
 }
-
-resource "aws_lb_listener" "test" {
-  load_balancer_arn = aws_lb.this.arn
-  port              = 8081
-  protocol          = "HTTP"
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.test.arn
-  }
-}
-

@@ -5,3 +5,4 @@ aws_region      = "eu-west-2"
 task_cpu        = "256"
 task_memory     = "512"
 route53_zone_id = "Z103935430WUS287YMWJ6"
+
