@@ -1,17 +1,15 @@
 name: Terraform Apply - Staging
 
 on:
-  push:
-    branches: [staging]
-    paths:
-      - 'terraform/env/staging/**'
-      - 'terraform/modules/**'
-      
+  workflow_dispatch:
+
 jobs:
   terraform-apply:
     name: Terraform Apply - Staging
     runs-on: ubuntu-latest
-    environment: staging   
+
+    environment: staging
+
     permissions:
       contents: read
       id-token: write
