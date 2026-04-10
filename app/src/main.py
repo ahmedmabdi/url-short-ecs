@@ -5,6 +5,8 @@ import hashlib, time
 
 from src.ddb import put_mapping, get_mapping
 
+app = FastAPI()  
+
 @app.get("/")                          
 def homepage():
     return FileResponse("index.html")  
