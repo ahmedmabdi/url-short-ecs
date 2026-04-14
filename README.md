@@ -1,7 +1,10 @@
-# 🔗 URL Shortener — Production AWS Deployment
+# URL Shortener — Production AWS Deployment
 
-> A production-grade URL shortener built with FastAPI, deployed on AWS ECS Fargate using a full CI/CD pipeline with blue/green deployments via GitHub Actions and AWS CodeDeploy.
+A production-grade URL shortener API deployed on AWS ECS Fargate. This is a solo cloud engineering project focused entirely on the infrastructure, networking, security, and deployment pipeline required to run a containerised application in a professional AWS environment.
 
+The goal was not to build an application, but to deploy one correctly. Rather than stopping at "it runs on ECS", the project implements the patterns expected in a real production environment: private subnets with no NAT Gateway, VPC Endpoints for all AWS service traffic, least-privilege IAM, WAF at the edge, OIDC-based CI/CD with no static credentials, and zero-downtime blue/green deployments with automatic rollback.
+
+Every layer, from the VPC design to the GitHub Actions pipeline, was built and debugged from scratch.
 
 ---
 
@@ -9,7 +12,7 @@
 
 ![Homepage](docs/screenshots/homepage.png)
 
-> The homepage provides a clean interface to shorten URLs, a curl API reference, and links to the GitHub repository.
+The homepage provides a clean interface to shorten URLs, a curl API reference, and links to the GitHub repository.
 
 ---
 
