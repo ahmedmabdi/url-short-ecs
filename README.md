@@ -2,11 +2,10 @@
 
 > A production-grade URL shortener built with FastAPI, deployed on AWS ECS Fargate using a full CI/CD pipeline with blue/green deployments via GitHub Actions and AWS CodeDeploy.
 
-**Live:** [https://ahmedumami.click](https://ahmedumami.click)
 
 ---
 
-## 📸 Homepage
+## Homepage
 
 ![Homepage](docs/screenshots/homepage.png)
 
@@ -14,7 +13,7 @@
 
 ---
 
-## 📖 What Is This?
+## What Is This?
 
 A URL shortener REST API that accepts a long URL, hashes it using SHA-256 (8-character ID), stores the mapping in DynamoDB, and issues a redirect when the short link is visited.
 
@@ -38,7 +37,7 @@ curl https://ahmedumami.click/healthz
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 > *(Insert architecture diagram here — recommended tool: [draw.io](https://draw.io) or [Excalidraw](https://excalidraw.com))*
 
@@ -66,7 +65,7 @@ GitHub Push → GitHub Actions → ECR (new image) → CodeDeploy
 
 ---
 
-## ☁️ AWS Services Used
+## AWS Services Used
 
 | Service | Purpose |
 |---|---|
@@ -118,7 +117,7 @@ Two separate roles are used, following least-privilege principles:
 
 ---
 
-## 🚀 CI/CD Pipeline
+## CI/CD Pipeline
 
 ### GitHub Actions — Build, Scan & Deploy
 
@@ -176,7 +175,7 @@ This gives zero-downtime deployments with automatic rollback — no manual inter
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |---|---|
@@ -189,7 +188,7 @@ This gives zero-downtime deployments with automatic rollback — no manual inter
 
 ---
 
-## ✅ What Went Well
+## What Went Well
 
 **Infrastructure as Code from the start** — all AWS resources are Terraform modules, making environments reproducible. Spinning up a new `dev` or `staging` environment requires only a variable change.
 
@@ -203,7 +202,7 @@ This gives zero-downtime deployments with automatic rollback — no manual inter
 
 ---
 
-## 🔧 Areas for Improvement at Industry Scale
+## Areas for Improvement at Industry Scale
 
 ### Observability
 - **Distributed tracing** — add AWS X-Ray or OpenTelemetry to trace requests end-to-end from ALB → ECS → DynamoDB. Currently only CloudWatch logs are available.
@@ -233,41 +232,7 @@ This gives zero-downtime deployments with automatic rollback — no manual inter
 
 ---
 
-## 📁 Project Structure
-
-```
-.
-├── app/
-│   └── src/
-│       ├── main.py          # FastAPI app — routes
-│       ├── ddb.py           # DynamoDB client
-│       └── index.html       # Homepage
-│   └── Dockerfile           # Multi-stage build
-├── terraform/
-│   ├── modules/
-│   │   ├── vpc/             # VPC, subnets, IGW, endpoints, SGs
-│   │   ├── alb/             # ALB, target groups, listeners, WAF
-│   │   ├── ecs/             # Cluster, task definition, service, autoscaling
-│   │   ├── acm/             # ACM certificates, Route 53 validation + A record
-│   │   ├── codedeploy/      # CodeDeploy app + deployment group
-│   │   ├── dynamodb/        # DynamoDB table, TTL, PITR
-│   │   ├── iam/             # Execution + task roles
-│   │   ├── cloudfront/      # CloudFront distribution
-│   │   └── cloudwatch/      # Log groups, alarms, SNS
-│   └── env/
-│       └── prod/            # Production environment root
-│           ├── main.tf
-│           └── variables.tf
-├── codedeploy/
-│   └── appspec.yml          # CodeDeploy ECS AppSpec
-└── .github/
-    └── workflows/
-        └── deploy.yml       # GitHub Actions pipeline
-```
-
----
-
-## 🏃 Running Locally
+## Running Locally
 
 ```bash
 # Set environment variables
@@ -284,6 +249,6 @@ uvicorn main:app --reload --port 8080
 
 ---
 
-## 📜 License
+## License
 
 MIT
