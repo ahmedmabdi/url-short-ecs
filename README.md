@@ -193,6 +193,23 @@ This gives zero-downtime deployments with automatic rollback — no manual inter
 
 ---
 
+## Monitoring
+
+CloudWatch is the observability layer for the production environment. Three alarms are provisioned via Terraform, all feeding into an SNS topic that sends email alerts:
+
+- **ECS CPU High** — triggers when average CPU utilisation across the service exceeds the configured threshold over two consecutive evaluation periods
+- **ECS Memory High** — same pattern for memory utilisation, with email notification via SNS
+- **ALB 5xx High** — triggers when the count of HTTP 5xx responses from the target exceeds 5 within a 60-second period, indicating application-level errors rather than infrastructure issues
+
+ECS Container Insights is enabled on the cluster, providing task-level CPU, memory, network, and storage metrics in CloudWatch without any instrumentation required in the application.
+
+Container logs are shipped via the `awslogs` log driver to a dedicated log group (`/ecs/urlshort-prod`) with a 1-week retention policy. Every request, error, and uvicorn startup message is captured and queryable in CloudWatch Logs Insights.
+
+![CloudWatch Alarms](images/memory-high.png)
+![CloudWatch Logs](images/cloudwatch-logs.png)
+
+---
+
 ## Tech Stack
 
 | Layer | Technology |
