@@ -235,23 +235,6 @@ This gives zero-downtime deployments with automatic rollback — no manual inter
 
 ---
 
-## Running Locally
-
-```bash
-# Set environment variables
-export AWS_REGION=eu-west-2
-export TABLE_NAME=urlshortener-prod-table
-
-# Install dependencies
-pip install -r app/requirements.txt
-
-# Run
-cd app/src
-uvicorn main:app --reload --port 8080
-```
-
----
-
 ## License
 
 MIT
