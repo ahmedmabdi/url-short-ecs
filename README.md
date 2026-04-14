@@ -163,6 +163,20 @@ push to main
 - **Environment isolation** — separate ECR repos, IAM roles, ECS clusters, and DynamoDB tables per environment.
 - **Git SHA tagging** — every image is tagged `{env}-{git-sha}` for full traceability.
 
+### Terraform — Infrastructure Pipelines
+
+Infrastructure is provisioned per environment using Terraform. Each environment has its own root module under `terraform/env/` with its own state, variables, and backend — changes to one environment's infrastructure are completely isolated from another. All three environments are identical in architecture: VPC, ECS Fargate, ALB, WAF, CloudFront, DynamoDB, and CloudWatch are all provisioned across `dev`, `staging`, and `prod`. The only differences are resource names, DynamoDB table names, IAM roles, and ECR repositories — the infrastructure shape is the same.
+
+The ECS service uses a `CODE_DEPLOY` deployment controller which means Terraform must not attempt to manage the running task definition. The service resource uses `lifecycle { ignore_changes = [task_definition, load_balancer] }` to hand that responsibility entirely to CodeDeploy.
+
+**Terraform Plan — prod**
+
+![Terraform Plan](images/tplan-prod.png)
+
+**Terraform Apply — prod**
+
+![Terraform Apply](images/tapply-prod.png)
+
 ### CodeDeploy — Blue/Green
 
 ![CodeDeploy](images/codedeploy.png)
