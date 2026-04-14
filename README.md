@@ -210,29 +210,23 @@ This gives zero-downtime deployments with automatic rollback — no manual inter
 
 ### Observability
 - **Distributed tracing** — add AWS X-Ray or OpenTelemetry to trace requests end-to-end from ALB → ECS → DynamoDB. Currently only CloudWatch logs are available.
-- **Structured logging** — switch from uvicorn default logs to JSON-structured logs with request IDs for better CloudWatch Insights querying.
-- **Custom metrics** — emit CloudWatch metrics for shortening rate, redirect latency, and 4xx/5xx rates. Currently only ECS CPU/memory metrics exist.
+- **Structured logging** — switch from uvicorn default logs to JSON-structured logs with correlation IDs for meaningful CloudWatch Insights querying.
+- **Custom application metrics** — CloudWatch alarms exist for ECS CPU, memory, and ALB 5xx errors with SNS email alerting. Missing are application-level metrics: shortening rate, redirect latency per route, and 4xx rates broken down by endpoint.
 
 ### Reliability
-- **DynamoDB TTL** — the schema includes a TTL attribute but it's not being set on items. Expired links should auto-delete to prevent unbounded table growth.
-- **Multi-region active-active** — for true high availability, DynamoDB Global Tables + multi-region ALB with Route 53 latency-based routing would serve global users with lower latency and survive a regional failure.
-- **Circuit breaker** — add retry logic with exponential backoff on DynamoDB calls. Currently a DynamoDB throttle would surface as a 500.
+- **DynamoDB TTL** — the schema defines a TTL attribute but it is never set at write time. Without it the table grows indefinitely — short links should carry an expiry timestamp and be cleaned up automatically.
+- **Circuit breaker** — no retry logic exists on DynamoDB calls. A throttle or transient error surfaces directly as a 500. Exponential backoff with jitter should wrap all DynamoDB operations.
+- **Multi-region** — for true high availability, DynamoDB Global Tables with multi-region ECS and Route 53 latency-based routing would survive a full regional failure and reduce latency for global users.
 
 ### Security
-- **Secrets Manager** — any future credentials (API keys, tokens) should use AWS Secrets Manager with automatic rotation rather than environment variables.
-- **DynamoDB encryption** — enable customer-managed KMS keys (CMK) for DynamoDB at-rest encryption rather than the default AWS-managed key.
-- **ALB access logs** — enable ALB access logs to S3 for security auditing and forensics.
-- **GuardDuty** — enable AWS GuardDuty for threat detection across the account.
-
-### Performance
-- **DynamoDB DAX** — add a DAX (DynamoDB Accelerator) cluster in front of DynamoDB for microsecond read latency on popular short links. Currently every redirect hits DynamoDB directly.
-- **CloudFront caching** — configure CloudFront to cache redirect responses for popular short links at the edge, eliminating origin hits entirely.
-- **Connection pooling** — the current boto3 client is instantiated at module load time which is fine, but under high concurrency a connection pool would reduce TLS handshake overhead.
+- **Secrets Manager** — no application secrets exist today, but any future credentials must use AWS Secrets Manager with automatic rotation rather than task definition environment variables.
+- **DynamoDB CMK encryption** — currently using the default AWS-managed key. A customer-managed KMS key gives explicit control over key rotation, access policy, and audit trail.
+- **GuardDuty** — not enabled. Provides account-wide threat detection covering compromised credentials, unusual API calls, and reconnaissance activity at no infrastructure cost.
 
 ### Operations
-- **Automated rollback triggers** — configure CodeDeploy to automatically roll back on CloudWatch alarm breach (e.g. elevated 5xx rate) rather than only on health check failure.
-- **Cost allocation tags** — add consistent tagging (`Environment`, `Project`, `Owner`) to all resources for cost visibility in AWS Cost Explorer.
-- **Runbook** — document operational procedures: how to manually roll back a deployment, how to restore DynamoDB from PITR, how to rotate IAM credentials.
+- **Automated rollback on alarms** — the ALB 5xx alarm exists but is not wired to CodeDeploy. Connecting it as a rollback trigger would catch deployments that pass health checks but degrade under real traffic.
+- **Cost allocation tags** — resources lack consistent `Environment`, `Project`, and `Owner` tags, making Cost Explorer breakdowns unreliable.
+- **Runbook** — no documented operational procedures exist for manual rollback, DynamoDB PITR restore, or IAM credential rotation.
 
 ---
 
