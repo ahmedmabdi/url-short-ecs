@@ -205,7 +205,7 @@ ECS Container Insights is enabled on the cluster, providing task-level CPU, memo
 
 Container logs are shipped via the `awslogs` log driver to a dedicated log group (`/ecs/urlshort-prod`) with a 1-week retention policy. Every request, error, and uvicorn startup message is captured and queryable in CloudWatch Logs Insights.
 
-![CloudWatch Alarms](images/memory-high.png)
+![CloudWatch Alarms](images/cloudwatch-alarms.png)
 ![CloudWatch Logs](images/cloudwatch-logs.png)
 
 ---
