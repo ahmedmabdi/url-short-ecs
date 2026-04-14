@@ -10,7 +10,7 @@ Every layer, from the VPC design to the GitHub Actions pipeline, was built and d
 
 ## Homepage
 
-![Homepage](docs/screenshots/homepage.png)
+![Homepage](images//homepage1.png)(images//homepage2.png)
 
 The homepage provides a clean interface to shorten URLs, a curl API reference, and links to the GitHub repository.
 
