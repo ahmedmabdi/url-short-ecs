@@ -127,7 +127,7 @@ Two separate roles are used, following least-privilege principles:
 
 The pipeline triggers on pushes to `dev`, `staging`, or `main` branches when files in `app/**` change.
 
-![CI/CD Pipeline](docs/screenshots/github-actions.png)
+![CI/CD Pipeline](images/build-push.png)
 
 **Pipeline stages:**
 
@@ -165,7 +165,7 @@ push to main
 
 ### CodeDeploy — Blue/Green
 
-![CodeDeploy](docs/screenshots/codedeploy.png)
+![CodeDeploy](images/codedeploy.png)
 
 CodeDeploy manages the actual traffic shift:
 
