@@ -43,7 +43,7 @@ curl https://ahmedumami.click/healthz
 
 ## Architecture
 
-> *(Insert architecture diagram here — recommended tool: [draw.io](https://draw.io) or [Excalidraw](https://excalidraw.com))*
+> *(Insert architecture diagram here)*
 
 **High-level flow:**
 
