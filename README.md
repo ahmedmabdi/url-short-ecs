@@ -240,13 +240,11 @@ Container logs are shipped via the `awslogs` log driver to a dedicated log group
 ## Areas for Improvement at Industry Scale
 
 ### Observability
-- **Distributed tracing** — add AWS X-Ray or OpenTelemetry to trace requests end-to-end from ALB → ECS → DynamoDB. Currently only CloudWatch logs are available.
-- **Structured logging** — switch from uvicorn default logs to JSON-structured logs with correlation IDs for meaningful CloudWatch Insights querying.
+- **Distributed tracing** — add AWS X-Ray to trace requests end-to-end from ALB → ECS → DynamoDB. Currently only CloudWatch logs are available.
 - **Custom application metrics** — CloudWatch alarms exist for ECS CPU, memory, and ALB 5xx errors with SNS email alerting. Missing are application-level metrics: shortening rate, redirect latency per route, and 4xx rates broken down by endpoint.
 
 ### Reliability
 - **DynamoDB TTL** — the schema defines a TTL attribute but it is never set at write time. Without it the table grows indefinitely — short links should carry an expiry timestamp and be cleaned up automatically.
-- **Circuit breaker** — no retry logic exists on DynamoDB calls. A throttle or transient error surfaces directly as a 500. Exponential backoff with jitter should wrap all DynamoDB operations.
 - **Multi-region** — for true high availability, DynamoDB Global Tables with multi-region ECS and Route 53 latency-based routing would survive a full regional failure and reduce latency for global users.
 
 ### Security
