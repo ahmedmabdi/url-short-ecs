@@ -78,6 +78,7 @@ GitHub Push → GitHub Actions → ECR (new image) → CodeDeploy
 | **ALB** | Application Load Balancer — HTTPS termination, health checks, blue/green listener switching |
 | **DynamoDB** | Serverless key-value store for URL mappings (`id` → `url`) |
 | **Route 53** | DNS hosting — A record aliased to ALB |
+| **SNS** | Delivers alert notifications to subscribers (via email) when CloudWatch alarms fire |
 | **ACM** | TLS certificates for `ahmedumami.click` (ALB) and CloudFront (us-east-1) |
 | **CloudFront** | CDN — caches and accelerates global traffic, HTTPS enforcement |
 | **WAF** | Web Application Firewall — AWS managed rules + IP-based rate limiting (1000 req/IP) |
