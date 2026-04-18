@@ -43,7 +43,7 @@ curl https://ahmedumami.click/healthz
 
 ## Architecture
 
-> *(Insert architecture diagram here)*
+![Architecture](images//urlshort-arch.png)
 
 **High-level flow:**
 
