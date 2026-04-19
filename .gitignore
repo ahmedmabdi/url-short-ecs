@@ -8,6 +8,7 @@
 .terraform.lock.hcl
 *.tfstate.lock.info
 tfplan
+*.tfvars
 
 
 # Node
