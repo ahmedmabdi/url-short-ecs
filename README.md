@@ -168,7 +168,7 @@ push to main
 
 Infrastructure is provisioned per environment using Terraform. Each environment has its own root module under `terraform/env/` with its own state, variables, and backend — changes to one environment's infrastructure are completely isolated from another. All three environments are identical in architecture: VPC, ECS Fargate, ALB, WAF, CloudFront, DynamoDB, and CloudWatch are all provisioned across `dev`, `staging`, and `prod`. The only differences are resource names, DynamoDB table names, IAM roles, and ECR repositories — the infrastructure shape is the same.
 
-The ECS service uses a `CODE_DEPLOY` deployment controller which means Terraform must not attempt to manage the running task definition. The service resource uses `lifecycle { ignore_changes = [task_definition, load_balancer] }` to hand that responsibility entirely to CodeDeploy.
+The ECS service uses a `CODE_DEPLOY` deployment controller which means Terraform must not attempt to manage the running task definition.
 
 **Terraform Plan — prod**
 
