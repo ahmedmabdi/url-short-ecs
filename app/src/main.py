@@ -2,7 +2,6 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import RedirectResponse, FileResponse  
 import hashlib, time
 
-
 from src.ddb import put_mapping, get_mapping
 
 app = FastAPI()  

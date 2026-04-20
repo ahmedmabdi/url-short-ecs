@@ -168,7 +168,7 @@ jobs:
                   },
                   {
                     "name": "TABLE_NAME",
-                    "value": "arn:aws:dynamodb:eu-west-2:471112781681:table/urlshortener-ENV_PLACEHOLDER-table"
+                    "value": "arn:aws:dynamodb:eu-west-2:${{ secrets.AWS_ACCOUNT_ID }}:table/urlshortener-ENV_PLACEHOLDER-table"
                   }
                 ],
                 "logConfiguration": {

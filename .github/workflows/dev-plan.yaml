@@ -46,6 +46,7 @@ jobs:
 
       - name: Terraform Plan
         working-directory: terraform/env/dev
-        run: terraform plan -var-file=terraform.tfvars -out=tfplan
-
-    
+        run: |
+          terraform plan -out=tfplan-dev \
+            -var="container_image=${{ secrets.ECR_REPO_DEV }}" \
+            -var="route53_zone_id=${{ secrets.ROUTE53_ZONE_ID }}"
