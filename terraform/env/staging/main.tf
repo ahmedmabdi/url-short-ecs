@@ -81,6 +81,7 @@ module "acm" {
   zone_id      = var.route53_zone_id
   alb_dns_name = module.alb.alb_dns_name
   alb_zone_id  = module.alb.alb_zone_id
+  route53_zone_id = var.route53_zone_id
   providers = {
     aws.us_east_1 = aws.us_east_1
   }

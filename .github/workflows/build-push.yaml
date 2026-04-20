@@ -87,6 +87,7 @@ jobs:
       - name: Push Docker Image
         run: docker push ${{ steps.build.outputs.image }}
 
+
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
@@ -113,7 +114,9 @@ jobs:
           else
             echo "REPO=${{ secrets.ECR_REPO_PROD }}"    >> $GITHUB_ENV
             echo "ROLE=${{ secrets.AWS_ROLE_PROD }}"    >> $GITHUB_ENV
-            echo "LOG_GROUP=urlshortener-prod"          >> $GITHUB_ENV
+            echo "LOG_GROUP=urlshort-prod" >> $GITHUB_ENV         
+            
+            
           fi
 
           echo "EXEC_ROLE=${{ secrets.ECS_EXECUTION_ROLE }}" >> $GITHUB_ENV
@@ -165,7 +168,7 @@ jobs:
                   },
                   {
                     "name": "TABLE_NAME",
-                    "value": "arn:aws:dynamodb:eu-west-2:471112781681:table/urlshortener-ENV_PLACEHOLDER-table"
+                    "value": "arn:aws:dynamodb:eu-west-2:${{ secrets.AWS_ACCOUNT_ID }}:table/urlshortener-ENV_PLACEHOLDER-table"
                   }
                 ],
                 "logConfiguration": {

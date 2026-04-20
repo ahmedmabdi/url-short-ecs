@@ -10,7 +10,6 @@ variable "subject_alternative_names" {
 
 variable "route53_zone_id" {
   type    = string
-  default = "Z103935430WUS287YMWJ6"
 }
 
 variable "alb_dns_name" {
