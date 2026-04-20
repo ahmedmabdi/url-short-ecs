@@ -9,7 +9,7 @@ app = FastAPI()
 
 @app.get("/")                          
 def homepage():
-    return FileResponse("index.html")  
+    return FileResponse("/app/src/index.html")  
 
 @app.get("/healthz")
 def health():
