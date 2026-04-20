@@ -38,6 +38,9 @@ jobs:
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.14.0
+      - name: Debug
+        run: |
+          echo "Image: ${{ secrets.ECR_REPO_PROD }}"
 
       - name: Terraform Init
         working-directory: terraform/env/dev
