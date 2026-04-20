@@ -216,7 +216,7 @@ jobs:
           DEPLOY_ID=$(aws deploy create-deployment \
             --application-name url-shortener-${ENV} \
             --deployment-group-name blue-green-${ENV} \
-            --s3-location bucket=${{ env.S3_BUCKET }},key=appspec-${ENV}.yml,bundleType=YAML \
+            --revision revisionType=AppSpecContent,appSpecContent="{content=$(cat ${{ env.APPSPEC_FILE }} | jq -Rs .)}" \
             --query 'deploymentId' \
             --output text)
 
