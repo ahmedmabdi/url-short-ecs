@@ -31,7 +31,8 @@ jobs:
       
       - name: Debug
         run: |
-        echo "Image: ${{ secrets.ECR_REPO_PROD }}"
+         echo "Image: ${{ secrets.ECR_REPO_PROD }}"
+         
       - name: Terraform Init
         working-directory: terraform/env/prod
         run: terraform init
