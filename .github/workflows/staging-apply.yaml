@@ -40,6 +40,11 @@ jobs:
       - name: Terraform Apply
         working-directory: terraform/env/staging
         run: |
-          terraform apply auto-approve \
-            -var="container_image=${{ secrets.ECR_REPO_STAGING }}" \
+          terraform apply -auto-approve \
+            -var="container_name=urlshort" \
+            -var="container_port=8080" \
+            -var="task_cpu=256" \
+            -var="task_memory=512" \
+            -var="aws_region=eu-west-2" \
+            -var="container_image=${{ secrets.ECR_REPO_STAGING}}" \
             -var="route53_zone_id=${{ secrets.ROUTE53_ZONE_ID }}"
