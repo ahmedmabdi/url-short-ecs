@@ -58,15 +58,23 @@ resource "aws_ecs_task_definition" "this" {
 resource "aws_ecs_service" "this" {
   name            = var.service_name
   cluster         = aws_ecs_cluster.this.id
+
   task_definition = aws_ecs_task_definition.this.arn
+
   desired_count   = var.desired_count
   launch_type     = "FARGATE"
-  health_check_grace_period_seconds = 30
 
   deployment_controller {
     type = "CODE_DEPLOY"
   }
-  
+
+  lifecycle {
+  ignore_changes = [
+    task_definition,
+    load_balancer
+    ]
+  }
+
   network_configuration {
     subnets          = var.private_subnets
     security_groups  = [var.ecs_sg_id]
@@ -77,12 +85,7 @@ resource "aws_ecs_service" "this" {
     target_group_arn = var.target_group_arn
     container_name   = var.container_name
     container_port   = var.container_port
-
   }
-   depends_on = [
-    aws_ecs_task_definition.this 
-  ]
-  
 }
 
 resource "aws_appautoscaling_target" "ecs" {
