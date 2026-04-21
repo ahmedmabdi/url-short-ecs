@@ -64,7 +64,7 @@ GitHub Push → GitHub Actions → ECR (new image) → CodeDeploy
                                                       ↓
                                           Traffic shifts to prod TG (port 443)
                                                       ↓
-                                          Old task drained and terminated
+                                          Old task is drained and terminated
 ```
 
 ---
