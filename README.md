@@ -166,6 +166,41 @@ push to main
 - **Environment isolation** — separate ECR repos, IAM roles, ECS clusters, and DynamoDB tables per environment.
 - **Git SHA tagging** — every image is tagged `{env}-{git-sha}` for full traceability.
 
+## Cost Optimisation
+
+Running a production-grade AWS environment doesn't have to be expensive. Several deliberate architecture decisions were made to minimise cost without compromising security or reliability.
+
+- **No NAT Gateway**
+The most significant saving. A NAT Gateway costs approximately $32/month in base charges plus data processing fees. ECS tasks in private subnets need to reach AWS services (ECR to pull images, DynamoDB for reads/writes, CloudWatch for logs) — instead of routing that traffic through a NAT Gateway, VPC Interface Endpoints and Gateway Endpoints are used to keep all traffic on the AWS private backbone. Gateway Endpoints (S3, DynamoDB) are free. Interface Endpoints (ECR, CloudWatch Logs) incur a small hourly charge but are significantly cheaper than NAT at any meaningful data volume.
+
+- **Fargate over EC2**
+No EC2 instances to size, patch, or pay for when idle. Fargate charges only for the CPU and memory allocated to running tasks. With `256 CPU` and `512MB` memory, the base cost per task is minimal, and the auto-scaling policy scales down to minimum capacity during low traffic periods.
+
+- **DynamoDB On-Demand Billing**
+The table uses on-demand capacity mode rather than provisioned throughput. There is no minimum charge for reserved capacity — the table costs nothing when idle and scales automatically under load without manual capacity planning.
+
+- **CloudWatch Log Retention**
+Log groups are set to a 7-day retention policy. Without this, logs accumulate indefinitely and CloudWatch storage costs grow unbounded. 7 days is sufficient for debugging and incident response at this scale.
+
+- **S3 for CodeDeploy Artifacts**
+AppSpec files are small YAML files stored in S3. S3 storage and request costs at this volume are negligible (fractions of a cent per month), making it a cost-effective artifact store compared to alternatives.
+
+### Estimated Monthly Cost (prod, low traffic)
+
+| Service | Estimated Cost |
+|---|---|
+| ECS Fargate (1 task, 256 CPU / 512MB) | ~$8–10 |
+| ALB | ~$16–18 |
+| DynamoDB (on-demand, low traffic) | <$1 |
+| VPC Interface Endpoints (3 endpoints) | ~$6–8 |
+| CloudFront | <$1 |
+| WAF | ~$10 |
+| CloudWatch | ~$1–2 |
+| S3 | <$1 |
+| **Total** | **~$43–50/month** |
+
+> ALB is the dominant cost at low traffic volumes. At higher traffic the VPC Endpoint savings over NAT Gateway become more pronounced — NAT Gateway data processing charges scale linearly with traffic whereas endpoint pricing is more favourable.
+
 ### Terraform — Infrastructure Pipelines
 
 Infrastructure is provisioned per environment using Terraform. Each environment has its own root module under `terraform/env/` with its own state, variables, and backend — changes to one environment's infrastructure are completely isolated from another. All three environments are identical in architecture: VPC, ECS Fargate, ALB, WAF, CloudFront, DynamoDB, and CloudWatch are all provisioned across `dev`, `staging`, and `prod`. The only differences are resource names, DynamoDB table names, IAM roles, and ECR repositories — the infrastructure shape is the same.
