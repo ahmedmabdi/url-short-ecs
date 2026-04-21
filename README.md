@@ -73,7 +73,7 @@ GitHub Push → GitHub Actions → ECR (new image) → CodeDeploy
 
 | Service | Purpose |
 |---|---|
-| **ECS Fargate** | Runs containerised FastAPI app — serverless compute, no EC2 management |
+| **ECS Fargate** | Runs containerised FastAPI app. A serverless compute, no EC2 management |
 | **ECR** | Stores Docker images per environment, tagged by git SHA |
 | **ALB** | Application Load Balancer — HTTPS termination, health checks, blue/green listener switching |
 | **DynamoDB** | Serverless key-value store for URL mappings (`id` → `url`) |
@@ -81,11 +81,11 @@ GitHub Push → GitHub Actions → ECR (new image) → CodeDeploy
 | **SNS** | Delivers alert notifications to subscribers (via email) when CloudWatch alarms fire |
 | **ACM** | TLS certificates for `ahmedumami.click` (ALB) and CloudFront (us-east-1) |
 | **CloudFront** | CDN — caches and accelerates global traffic, HTTPS enforcement |
-| **WAF** | Web Application Firewall — AWS managed rules + IP-based rate limiting (1000 req/IP) |
+| **WAF** | Web Application Firewall, AWS managed rules + IP-based rate limiting (1000 req/IP) |
 | **CodeDeploy** | Orchestrates blue/green ECS deployments with automatic rollback on failure |
 | **CloudWatch** | Log groups per environment, CPU-based auto-scaling alarms, ECS Container Insights |
-| **IAM** | Least-privilege roles — separate execution role (ECR/CloudWatch) and task role (DynamoDB only) |
-| **VPC** | Isolated network — public subnets (ALB), private subnets (ECS tasks) |
+| **IAM** | Least-privilege roles with separate execution role (ECR/CloudWatch) and task role (DynamoDB only) |
+| **VPC** | Isolated network. Public subnets (ALB) & private subnets (ECS tasks) |
 | **VPC Endpoints** | Private connectivity to DynamoDB and ECR without internet traversal |
 | **Security Groups** | ALB SG (80/443/8081 inbound), ECS SG (8080 from ALB only) |
 | **IGW** | Internet Gateway for public subnet outbound traffic (ALB) |
