@@ -186,7 +186,6 @@ resource "aws_wafv2_web_acl" "alb_waf" {
     }
   }
 }
-
 resource "aws_wafv2_web_acl_association" "alb_association" {
   resource_arn = aws_lb.this.arn
   web_acl_arn  = aws_wafv2_web_acl.alb_waf.arn
