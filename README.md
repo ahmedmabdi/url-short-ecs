@@ -206,13 +206,13 @@ NAT Gateway costs ~$32/month before data processing fees. Instead, VPC Interface
 No EC2 instances to size, patch, or pay for when idle. Fargate charges only for the CPU and memory allocated to running tasks. With `256 CPU` and `512MB` memory, the base cost per task is minimal, and the auto-scaling policy scales down to minimum capacity during low traffic periods.
 
 - **DynamoDB On-Demand Billing**
-The table uses on-demand capacity mode rather than provisioned throughput. There is no minimum charge for reserved capacity — the table costs nothing when idle and scales automatically under load without manual capacity planning.
+No reserved capacity charges. The table costs nothing when idle and scales automatically under load without any manual capacity planning.
 
 - **CloudWatch Log Retention**
-Log groups are set to a 7-day retention policy. Without this, logs accumulate indefinitely and CloudWatch storage costs grow unbounded. 7 days is sufficient for debugging and incident response at this scale.
+Log groups are set to a 7-day retention policy. Without this, logs accumulate indefinitely and storage costs grow unbounded over time.
 
 - **S3 for CodeDeploy Artifacts**
-AppSpec files are small YAML files stored in S3. S3 storage and request costs at this volume are negligible (fractions of a cent per month), making it a cost-effective artifact store compared to alternatives.
+AppSpec files are lightweight YAML files stored in S3. Storage and request costs at this volume are negligible, making it a cost-effective artifact store.
 
 ### Estimated Monthly Cost (prod, low traffic)
 
