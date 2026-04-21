@@ -109,7 +109,7 @@ VPC (10.0.0.0/16)
 
 > Gateway endpoints (used for services like S3 and DynamoDB) are free and operate at the route table level, whereas interface endpoints create elastic network interfaces within your subnets and incur a small hourly and data processing charge.
 
-> **VPC DHCP Options** — Custom DHCP option set configured to use AmazonProvidedDNS. This ensures that VPC Endpoint DNS resolution works correctly inside the VPC — without this, private DNS hostnames for services like `ecr.eu-west-2.amazonaws.com` would not resolve to the private endpoint IPs, breaking ECR pulls from private subnets.
+> **VPC DHCP Options** — A custom DHCP option set is configured to use AmazonProvidedDNS. This makes sure VPC endpoint DNS resolution works properly inside the VPC. Without it, private DNS names for services like "ecr.eu-west-2.amazonaws.com" won’t resolve to the endpoint’s private IPs, which would break ECR image pulls from private subnets.
 
 ### IAM — Least Privilege
 
