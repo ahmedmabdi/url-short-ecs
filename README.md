@@ -107,9 +107,11 @@ VPC (10.0.0.0/16)
 
 > **No NAT Gateway** — ECS tasks in private subnets communicate with AWS services (DynamoDB, ECR, CloudWatch) exclusively via VPC Interface Endpoints and Gateway Endpoints. This eliminates NAT Gateway costs (~$32/month) while maintaining full network isolation. 
 
-> Gateway endpoints (used for services like S3 and DynamoDB) are free and operate at the route table level, whereas interface endpoints create elastic network interfaces within your subnets and incur a small hourly and data processing charge.
-
 > **VPC DHCP Options** — A custom DHCP option set is configured to use AmazonProvidedDNS. This makes sure VPC endpoint DNS resolution works properly inside the VPC. Without it, private DNS names for services like "ecr.eu-west-2.amazonaws.com" won’t resolve to the endpoint’s private IPs, which would break ECR image pulls from private subnets.
+
+> **CloudFront** — Acts as the single entry point for all user traffic. It enforces HTTPS, caches static responses at edge locations globally, and shields the ALB from direct exposure to the internet. The ACM certificate is provisioned in us-east-1 as required by CloudFront. Reducing latency for geographically distributed users and offloads traffic from the origin.
+
+> **WAF** — two Web ACL instances are deployed: one attached to the ALB (regional) and one attached to the CloudFront distribution (global). Both apply the AWS Managed Common Rule Set, which blocks common web exploits including SQL injection, XSS, and known bad inputs. A rate-limiting rule blocks any single IP exceeding 1000 requests per minute, protecting against brute force and basic DDoS attempts. Using WAF at both layers ensures protection regardless of whether traffic arrives via CloudFront or directly hits the ALB.
 
 ### IAM — Least Privilege
 
