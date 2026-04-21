@@ -281,22 +281,22 @@ Container logs are shipped via the `awslogs` log driver to a dedicated log group
 ## Areas for Improvement at Industry Scale
 
 ### Observability
-- **Distributed tracing** — add AWS X-Ray to trace requests end-to-end from ALB → ECS → DynamoDB. Currently only CloudWatch logs are available.
-- **Custom application metrics** — CloudWatch alarms exist for ECS CPU, memory, and ALB 5xx errors with SNS email alerting. Missing are application-level metrics: shortening rate, redirect latency per route, and 4xx rates broken down by endpoint.
+- **Distributed tracing** — AWS X-Ray would provide end-to-end request tracing from ALB → ECS → DynamoDB. Currently only CloudWatch logs are available.
+- **Custom application metrics** — alarms cover ECS CPU, memory, and ALB 5xx errors. Missing are application-level metrics: shortening rate, redirect latency, and 4xx rates per endpoint.
 
 ### Reliability
-- **DynamoDB TTL** — the schema defines a TTL attribute but it is never set at write time. Without it the table grows indefinitely — short links should carry an expiry timestamp and be cleaned up automatically.
-- **Multi-region** — for true high availability, DynamoDB Global Tables with multi-region ECS and Route 53 latency-based routing would survive a full regional failure and reduce latency for global users.
+- **DynamoDB TTL** — TTL attribute is defined in the schema but never set at write time. Short links should carry an expiry timestamp to prevent the table growing indefinitely.
+- **Multi-region** — DynamoDB Global Tables with multi-region ECS and Route 53 latency-based routing would survive a full regional failure and reduce latency for global users.
 
 ### Security
-- **Secrets Manager** — no application secrets exist today, but any future credentials must use AWS Secrets Manager with automatic rotation rather than task definition environment variables.
-- **DynamoDB CMK encryption** — currently using the default AWS-managed key. A customer-managed KMS key gives explicit control over key rotation, access policy, and audit trail.
-- **GuardDuty** — not enabled. Provides account-wide threat detection covering compromised credentials, unusual API calls, and reconnaissance activity at no infrastructure cost.
+- **Secrets Manager** — no secrets yet; future credentials should use AWS Secrets Manager with rotation, not env vars.
+- **DynamoDB encryption** — using the default key; a customer-managed KMS key would allow better control and auditing.
+- **GuardDuty** — not enabled; would add account-wide threat detection with no infrastructure overhead.
 
 ### Operations
-- **Automated rollback on alarms** — the ALB 5xx alarm exists but is not wired to CodeDeploy. Connecting it as a rollback trigger would catch deployments that pass health checks but degrade under real traffic.
-- **Cost allocation tags** — resources lack consistent `Environment`, `Project`, and `Owner` tags, making Cost Explorer breakdowns unreliable.
-- **Runbook** — no documented operational procedures exist for manual rollback, DynamoDB PITR restore, or IAM credential rotation.
+- **Rollback on alarms** — ALB 5xx alarm isn’t linked to CodeDeploy; wiring it in would catch real-world failures.
+- **Cost tags** — missing consistent `Environment`, `Project`, and `Owner` tags, making costs harder to track.
+- **Runbook** — no documented steps for rollback, DynamoDB restore, or IAM credential rotation.
 
 ---
 
