@@ -200,7 +200,7 @@ This gives zero-downtime deployments with automatic rollback — no manual inter
 Running a production-grade AWS environment doesn't have to be expensive. Several deliberate architecture decisions were made to minimise cost without compromising security or reliability.
 
 - **No NAT Gateway**
-The most significant saving. A NAT Gateway costs approximately $32/month in base charges plus data processing fees. ECS tasks in private subnets need to reach AWS services (ECR to pull images, DynamoDB for reads/writes, CloudWatch for logs) — instead of routing that traffic through a NAT Gateway, VPC Interface Endpoints and Gateway Endpoints are used to keep all traffic on the AWS private backbone. Gateway Endpoints (S3, DynamoDB) are free. Interface Endpoints (ECR, CloudWatch Logs) incur a small hourly charge but are significantly cheaper than NAT at any meaningful data volume.
+NAT Gateway costs ~$32/month before data processing fees. Instead, VPC Interface Endpoints and Gateway Endpoints route all AWS service traffic (ECR, DynamoDB, CloudWatch) privately. Gateway Endpoints (S3, DynamoDB) are free. Interface Endpoints cost less than NAT at any meaningful traffic volume.
 
 - **Fargate over EC2**
 No EC2 instances to size, patch, or pay for when idle. Fargate charges only for the CPU and memory allocated to running tasks. With `256 CPU` and `512MB` memory, the base cost per task is minimal, and the auto-scaling policy scales down to minimum capacity during low traffic periods.
