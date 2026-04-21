@@ -128,6 +128,7 @@ resource "aws_vpc_endpoint" "ecr" {
   }
 }
 
+
 resource "aws_vpc_endpoint" "cloudwatch_logs" {
   vpc_id            = aws_vpc.main.id
   service_name      = "com.amazonaws.${var.region}.logs"
