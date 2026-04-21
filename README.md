@@ -128,7 +128,7 @@ Two separate roles are used, following least-privilege principles:
 
 ### GitHub Actions — Build, Scan & Deploy
 
-The pipeline triggers on pushes to `dev`, `staging`, or `main` branches when files in `app/**` change.
+The pipeline triggers on pushes to `dev`, `staging`, or `main` branches when files that are in `app/**` change.
 
 ![CI/CD Pipeline](images/build-push.png)
 
