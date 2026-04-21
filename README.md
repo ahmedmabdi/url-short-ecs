@@ -166,6 +166,35 @@ push to main
 - **Environment isolation** — separate ECR repos, IAM roles, ECS clusters, and DynamoDB tables per environment.
 - **Git SHA tagging** — every image is tagged `{env}-{git-sha}` for full traceability.
 
+### Terraform — Infrastructure Pipelines
+
+Infrastructure is provisioned per environment using Terraform. Each environment has its own root module under `terraform/env/` with its own state, variables, and backend — changes to one environment's infrastructure are completely isolated from another. All three environments are identical in architecture: VPC, ECS Fargate, ALB, WAF, CloudFront, DynamoDB, and CloudWatch are all provisioned across `dev`, `staging`, and `prod`. The only differences are resource names, DynamoDB table names, IAM roles, and ECR repositories — the infrastructure shape is the same.
+
+The ECS service uses a `CODE_DEPLOY` deployment controller which means Terraform must not attempt to manage the running task definition.
+
+**Terraform Plan — prod**
+
+![Terraform Plan](images/tplan-prod.png)
+
+**Terraform Apply — prod**
+
+![Terraform Apply](images/tapply-prod.png)
+
+### CodeDeploy — Blue/Green
+
+![CodeDeploy](images/codedeploy.png)
+
+CodeDeploy manages the actual traffic shift:
+
+1. New ECS task starts on the **test target group** (port 8081)
+2. ALB health checks run against `/healthz`
+3. Once healthy, traffic shifts from blue → green on port 443
+4. Old task is drained and terminated
+5. If health checks fail at any point, automatic rollback to the previous task
+
+This gives zero-downtime deployments with automatic rollback — no manual intervention required.
+
+---
 ## Cost Optimisation
 
 Running a production-grade AWS environment doesn't have to be expensive. Several deliberate architecture decisions were made to minimise cost without compromising security or reliability.
@@ -200,34 +229,6 @@ AppSpec files are small YAML files stored in S3. S3 storage and request costs at
 | **Total** | **~$43–50/month** |
 
 > ALB is the dominant cost at low traffic volumes. At higher traffic the VPC Endpoint savings over NAT Gateway become more pronounced — NAT Gateway data processing charges scale linearly with traffic whereas endpoint pricing is more favourable.
-
-### Terraform — Infrastructure Pipelines
-
-Infrastructure is provisioned per environment using Terraform. Each environment has its own root module under `terraform/env/` with its own state, variables, and backend — changes to one environment's infrastructure are completely isolated from another. All three environments are identical in architecture: VPC, ECS Fargate, ALB, WAF, CloudFront, DynamoDB, and CloudWatch are all provisioned across `dev`, `staging`, and `prod`. The only differences are resource names, DynamoDB table names, IAM roles, and ECR repositories — the infrastructure shape is the same.
-
-The ECS service uses a `CODE_DEPLOY` deployment controller which means Terraform must not attempt to manage the running task definition.
-
-**Terraform Plan — prod**
-
-![Terraform Plan](images/tplan-prod.png)
-
-**Terraform Apply — prod**
-
-![Terraform Apply](images/tapply-prod.png)
-
-### CodeDeploy — Blue/Green
-
-![CodeDeploy](images/codedeploy.png)
-
-CodeDeploy manages the actual traffic shift:
-
-1. New ECS task starts on the **test target group** (port 8081)
-2. ALB health checks run against `/healthz`
-3. Once healthy, traffic shifts from blue → green on port 443
-4. Old task is drained and terminated
-5. If health checks fail at any point, automatic rollback to the previous task
-
-This gives zero-downtime deployments with automatic rollback — no manual intervention required.
 
 ---
 
