@@ -105,7 +105,9 @@ VPC (10.0.0.0/16)
     └── eu-west-2c
 ```
 
-> **No NAT Gateway** — ECS tasks in private subnets communicate with AWS services (DynamoDB, ECR, CloudWatch) exclusively via VPC Interface Endpoints and Gateway Endpoints. This eliminates NAT Gateway costs (~$32/month) while maintaining full network isolation.
+> **No NAT Gateway** — ECS tasks in private subnets communicate with AWS services (DynamoDB, ECR, CloudWatch) exclusively via VPC Interface Endpoints and Gateway Endpoints. This eliminates NAT Gateway costs (~$32/month) while maintaining full network isolation. 
+
+> Gateway endpoints (used for services like S3 and DynamoDB) are free and operate at the route table level, whereas interface endpoints create elastic network interfaces within your subnets and incur a small hourly and data processing charge.
 
 > **VPC DHCP Options** — Custom DHCP option set configured to use AmazonProvidedDNS. This ensures that VPC Endpoint DNS resolution works correctly inside the VPC — without this, private DNS hostnames for services like `ecr.eu-west-2.amazonaws.com` would not resolve to the private endpoint IPs, breaking ECR pulls from private subnets.
 
