@@ -6,7 +6,6 @@ resource "aws_s3_bucket" "codedeploy_artifacts" {
     Environment = "shared"
   }
 }
-
 resource "aws_s3_bucket_versioning" "versioning" {
   bucket = aws_s3_bucket.codedeploy_artifacts.id
 
