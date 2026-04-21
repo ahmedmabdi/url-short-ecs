@@ -87,7 +87,7 @@ GitHub Push → GitHub Actions → ECR (new image) → CodeDeploy
 | **IAM** | Least-privilege roles with separate execution role (ECR/CloudWatch) and task role (DynamoDB only) |
 | **VPC** | Isolated network. Public subnets (ALB) & private subnets (ECS tasks) |
 | **VPC Endpoints** | Private connectivity to DynamoDB and ECR without internet traversal |
-| **Security Groups** | ALB SG (80/443/8081 inbound), ECS SG (8080 from ALB only) |
+| **Security Groups** | ALB SG (80/443 inbound), ECS SG (8080 from ALB only) |
 | **IGW** | Internet Gateway for public subnet outbound traffic (ALB) |
 | **S3** | Stores CodeDeploy AppSpec files per environment |
 
