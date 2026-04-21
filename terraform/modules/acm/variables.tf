@@ -1,13 +1,3 @@
-variable "domain_name" {
-  type    = string
-  default = "ahmedumami.click"
-}
-
-variable "subject_alternative_names" {
-  type    = list(string)
-  default = ["www.ahmedumami.click"]
-}
-
 variable "route53_zone_id" {
   type    = string
 }
@@ -23,3 +13,14 @@ variable "alb_zone_id" {
 variable "zone_id" {
   type = string
 }
+
+variable "domain_name" {
+  type    = string
+  default = "ahmedumami.click"
+}
+
+variable "subject_alternative_names" {
+  type    = list(string)
+  default = ["www.ahmedumami.click"]
+}
+
