@@ -7,3 +7,4 @@ Resources:
         LoadBalancerInfo:
           ContainerName: "urlshort"
           ContainerPort: 8080
+          
