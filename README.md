@@ -1,6 +1,6 @@
-# URL Shortener — Production AWS Deployment
+# Link Management Service — Production AWS Deployment
 
-A production-ready URL shortener API deployed on AWS ECS Fargate. This is a solo cloud engineering project focused on the infrastructure, networking, security and deployment pipeline needed to run a containerised application in a professional AWS environment.
+A production-ready Link Mangement Service API deployed on AWS ECS Fargate. This is a solo cloud engineering project focused on the infrastructure, networking, security and deployment pipeline needed to run a containerised application in a professional AWS environment.
 
 The aim wasn’t to build an application, but to deploy one properly. Rather than stopping at “it runs on ECS”, the project follows the patterns you’d expect in a real production environment: private subnets with no NAT Gateway, VPC endpoints for all AWS service traffic, least-privilege IAM, WAF at the edge, OIDC-based CI/CD with no static credentials, and zero-downtime blue/green deployments with automatic rollback.
 
